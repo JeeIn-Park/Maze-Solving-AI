@@ -27,9 +27,9 @@ solve_task_as(Task, Queue, Visited, Path) :-
     Queue = [Next|Rest],
     Next = [_, Pos|RPath],
     (achieved(Task, Pos) -> reverse([Pos|RPath],Path)
-    ;otherwise           -> (findall([NF, NP, Pos|RPath],
-                            (map_adjacent(Pos,NP,empty), heuristic(NP, Task, NF), \+ member(NP,Visited), \+ member([NP|_], Rest)),
-                            Newfound),
+    ;otherwise           -> findall(List, bagof([NF, NP, Pos|RPath], 
+                            NF^(map_adjacent(Pos,NP,empty), heuristic(NP, Task, NH), length(RPath, NG), NF is NH + NG, \+ member(NP,Visited), \+ member([NP|_], Rest)), 
+                            List), Newfound),
                             append(Newfound,Rest,NewQueue),
                             sort_lists_by_first_element(NewQueue, PriorityQueue),
                             write(PriorityQueue),
