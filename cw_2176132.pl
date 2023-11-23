@@ -31,7 +31,7 @@ compare_property(Task, List1, List2) :-
 
 % Sorting a list using predsort with the user-defined comparison predicate with an extra parameter
 sort_lists_by_f(Task, Queue, PriorityQueue) :-
-    predsort(compare_f(Task), Queue, PriorityQueue), write(PriorityQueue).
+    predsort(compare_f(Task), Queue, PriorityQueue).
 
 
 % Calculate the path required to achieve a Task
@@ -44,7 +44,9 @@ solve_task_bfs(Task, Queue, Visited, Path) :-
                             (map_adjacent(Pos,NP,empty),\+ member(NP,Visited), \+ member([NP|_],Rest)),
                             Newfound),
                             append(Rest,Newfound,NewQueue),
+                            write(NewQueue),
                             sort_lists_by_f(Task, NewQueue, PriorityQueue),
+                            write(PriorityQueue),
                              solve_task_bfs(Task, PriorityQueue,[Pos|Visited],Path))).
 
 
