@@ -25,3 +25,4 @@ achieved(Task,Pos) :-
     Task=find(Obj), map_adjacent(Pos,_,Obj)
     ;
     Task=go(Pos).
+    
