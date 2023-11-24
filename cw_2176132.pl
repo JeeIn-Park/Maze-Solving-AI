@@ -22,11 +22,16 @@ solve_task_as(Task, Queue, Visited_node, Path, Starting_energy) :-
     -> (reverse(Current_path, Path))
     ; (
         Starting_energy =< 0
-        -> (reverse(Current_path, [Starting_Point|_]), 
+        -> ( format('No energy left, current position: ~w~n', Current_Position),
+            reverse(Current_path, [Starting_Point|_]), 
             length(Current_path, Energy_consumped),
+            format('cunsumped energy: ~w~n', Energy_consumped),
             solve_task_as(find(c(_)), [state([Starting_Point], 0)], [], Charging_path, Starting_energy + Energy_consumped),
             reverse(Charging_path, [Charging_Station|Reversed_charging_path]),
+            format('found charging station: ~w~n', Charging_Station),
+            format('charging path to be added: ~w~n', [Charging_Station|Reversed_charging_path]),
             heuristic(Charging_Station, Task, H),
+            format('searching for the path again: ~w~n', Starting_Point),
             solve_task_as(Task, [state([Charging_Station|Reversed_charging_path], H)], [], Path, 100)
             )
         ; (   ( bagof(state([New_position|Current_path], F), F^(
@@ -38,12 +43,12 @@ solve_task_as(Task, Queue, Visited_node, Path, Starting_energy) :-
                     \+ member(state([New_position|_], _), Queue)
                 ), New_states)
 
-            ->  format('New_states      : ~w~n', [New_states]),
-                format('remain          : ~w~n', [Other_states]),
+            ->  format('    New_states      : ~w~n', [New_states]),
+                format('    remain          : ~w~n', [Other_states]),
                 append(Other_states, New_states, New_Queue),
-                format('Appended queue  : ~w~n', [New_Queue]),
+                format('    Appended queue  : ~w~n', [New_Queue]),
                 sort_queue(New_Queue, Priority_queue),
-                format('Priority_queue  : ~w~n', [Priority_queue]),
+                format('    Priority_queue  : ~w~n', [Priority_queue]),
                 New_Energy is Starting_energy - 1,
                 solve_task_as(Task, Priority_queue, [Current_Position|Visited_node], Path, New_Energy)
             )
