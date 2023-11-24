@@ -13,12 +13,13 @@ solve_task(Task,Cost) :-
 solve_task_as(Task, Queue, Visited_node, Path) :-
     Queue = [state(Current_path, _)| Other_states],
     Current_path = [Current_Position|Passed_Path],
-    format('NextPos: ~w', Current_Position),
+    format('Current_Position: ~w~n', Current_Position),
+    format('Queue: ~w~n', [Queue]),
     (achieved(Task, Current_Position) 
         -> reverse(Current_path, Path);
 
     otherwise 
-        -> ( bagof( state([New_position|Current_path], F), F^
+        -> ( bagof( state([New_position|Current_path], F), New_position^F^
                 ( map_adjacent(Current_Position, New_position, empty), 
                   heuristic(New_position, Task, H), length(Passed_Path, G), F is H + G,
                   \+ member(New_position, Visited_node),
@@ -26,8 +27,10 @@ solve_task_as(Task, Queue, Visited_node, Path) :-
                 ),
                 New_states
             ),
-            append(Other_states, New_states, New_Queue),
+            format('New_states: ~w~n', [New_states]),
+            append(New_states, Other_states, New_Queue),
             sort_queue(New_Queue, Priority_queue),
+            format('Priority_queue: ~w~n', [Priority_queue]),
             %write(Priority_queue),
             solve_task_as(Task, Priority_queue, [Current_Position|Visited_node], Path)
         )
@@ -39,12 +42,15 @@ heuristic(Next_position, Task, Heuristic) :-
     ; Heuristic = 0 ).
 
 
-% Comparator predicate to compare states based on their F values
-compare_state_f(<, state(_, F1), state(_, F2)) :-
-    F1 < F2.
+% Comparator predicate to compare states based on their F values while preserving original order for equal F values
+compare_state_f(<, state(_, F), state(_, F)) :- !. % Cut to avoid backtracking when F1 and F2 are equal
+compare_state_f(<, state(Index1, F), state(Index2, F)) :-
+    Index1 @< Index2, !. % Preserve original order for equal F values
+compare_state_f(<, _, _).
 compare_state_f(>, state(_, F1), state(_, F2)) :-
     F1 > F2.
 compare_state_f(=, _, _).
+
 
 % Predicate to sort a list of states based on their F values
 sort_queue(Queue, Priority_queue) :-
