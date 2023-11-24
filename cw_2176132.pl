@@ -11,9 +11,10 @@ solve_task(Task,Cost) :-
 
 % Calculate the path required to achieve a Task
 solve_task_as(Task, Queue, Visited_node, Path) :-
-    Queue = [state(Current_path, Estimated_cost)| Other_states],
+    Queue = [state(Current_path, _)| Other_states],
     Current_path = [Current_Position|Passed_Path],
-    (achieve(Task, Current_Position) 
+    format('NextPos: ~w', Current_Position),
+    (achieved(Task, Current_Position) 
         -> reverse(Current_path, Path);
 
     otherwise 
@@ -27,6 +28,7 @@ solve_task_as(Task, Queue, Visited_node, Path) :-
             ),
             append(Other_states, New_states, New_Queue),
             sort_queue(New_Queue, Priority_queue),
+            %write(Priority_queue),
             solve_task_as(Task, Priority_queue, [Current_Position|Visited_node], Path)
         )
     ).
