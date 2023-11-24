@@ -12,29 +12,30 @@ solve_task(Task,Cost) :-
 % Calculate the path required to achieve a Task
 solve_task_as(Task, Queue, Visited_node, Path) :-
     Queue = [state(Current_path, _)| Other_states],
-    Current_path = [Current_Position|Passed_Path],
+    Current_path = [Current_Position|_],
     format('Current_Position: ~w~n', Current_Position),
-    format('Queue: ~w~n', [Queue]),
+    format('Queue:          ~w~n', [Queue]),
     (achieved(Task, Current_Position) 
         -> reverse(Current_path, Path);
 
     otherwise 
-        -> ( bagof( state([New_position|Current_path], F), New_position^F^
+        -> ( bagof( state([New_position|Current_path], F), F^
                 ( map_adjacent(Current_Position, New_position, empty), 
-                  heuristic(New_position, Task, H), length(Passed_Path, G), F is H + G,
+                  heuristic(New_position, Task, H), length(Current_path, G), F is H + G,
                   \+ member(New_position, Visited_node),
                   \+ member([New_position|_], Queue)
                 ),
                 New_states
             ),
-            format('New_states: ~w~n', [New_states]),
-                (New_states = [] % No new states
-                -> solve_task_as(Task, Other_states, [Current_Position|Visited_node], Path)
-                ;   append(New_states, Other_states, New_Queue),
-                    sort_queue(New_Queue, Priority_queue),
-                    solve_task_as(Task, Priority_queue, [Current_Position|Visited_node], Path)
-                )
-            )
+            format('New_states:     ~w~n', [New_states]),
+            format('remain    :     ~w~n', [Other_states]),
+            append(Other_states, New_states, New_Queue),
+            format('Appended queue: ~w~n', [New_Queue]),
+            sort_queue(New_Queue, Priority_queue),
+            format('Priority_queue: ~w~n', [Priority_queue]),
+            %write(Priority_queue),
+            solve_task_as(Task, Priority_queue, [Current_Position|Visited_node], Path)
+        )
     ).
 
 
