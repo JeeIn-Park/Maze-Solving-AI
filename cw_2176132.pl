@@ -28,12 +28,13 @@ solve_task_as(Task, Queue, Visited_node, Path) :-
                 New_states
             ),
             format('New_states: ~w~n', [New_states]),
-            append(New_states, Other_states, New_Queue),
-            sort_queue(New_Queue, Priority_queue),
-            format('Priority_queue: ~w~n', [Priority_queue]),
-            %write(Priority_queue),
-            solve_task_as(Task, Priority_queue, [Current_Position|Visited_node], Path)
-        )
+                (New_states = [] % No new states
+                -> solve_task_as(Task, Other_states, [Current_Position|Visited_node], Path)
+                ;   append(New_states, Other_states, New_Queue),
+                    sort_queue(New_Queue, Priority_queue),
+                    solve_task_as(Task, Priority_queue, [Current_Position|Visited_node], Path)
+                )
+            )
     ).
 
 
