@@ -2,24 +2,34 @@
 solve_task(Task,Cost) :-
     my_agent(A), 
     get_agent_position(A,P),
+    get_agent_energy(A, E),
     heuristic(P, Task, H),
-    solve_task_as(Task, [state([P], H)], [], [P|Path]), !,
+    solve_task_as(Task, [state([P], H)], [], [P|Path], E), !,
 
     agent_do_moves(A,Path), 
-    length(Path,Cost).
+    length(Path,Cost),
+    get_agent_energy(A, E2),
+    format('Energy left: ~w~n', E2).
 
 
-% Calculate the path required to achieve a Task
-solve_task_as(Task, Queue, Visited_node, Path) :-
+% Calculate the path required with a* algorithm to achieve a Task
+solve_task_as(Task, Queue, Visited_node, Path, Starting_energy) :-
     Queue = [state(Current_path, _)| Other_states],
     Current_path = [Current_Position|_],
     format('Current_Position: ~w~n', Current_Position),
     format('Queue           : ~w~n', [Queue]),
     (achieved(Task, Current_Position) 
-        -> reverse(Current_path, Path) 
-        
-        ;
-        (   ( bagof(state([New_position|Current_path], F), F^(
+    -> (reverse(Current_path, Path))
+    ; (
+        Starting_energy =< 0
+        -> (reverse(Current_path, [Starting_Point|_]), 
+            length(Current_path, Energy_consumped),
+            solve_task_as(find(c(_)), [state([Starting_Point], 0)], [], Charging_path, Starting_energy + Energy_consumped),
+            reverse(Charging_path, [Charging_Station|Reversed_charging_path]),
+            heuristic(Charging_Station, Task, H),
+            solve_task_as(Task, [state([Charging_Station|Reversed_charging_path], H)], [], Path, 100)
+            )
+        ; (   ( bagof(state([New_position|Current_path], F), F^(
                     map_adjacent(Current_Position, New_position, empty),
                     heuristic(New_position, Task, H),
                     length(Current_path, G),
@@ -27,19 +37,23 @@ solve_task_as(Task, Queue, Visited_node, Path) :-
                     \+ member(New_position, Visited_node),
                     \+ member(state([New_position|_], _), Queue)
                 ), New_states)
-                
+
             ->  format('New_states      : ~w~n', [New_states]),
                 format('remain          : ~w~n', [Other_states]),
                 append(Other_states, New_states, New_Queue),
                 format('Appended queue  : ~w~n', [New_Queue]),
                 sort_queue(New_Queue, Priority_queue),
                 format('Priority_queue  : ~w~n', [Priority_queue]),
-                solve_task_as(Task, Priority_queue, [Current_Position|Visited_node], Path)
+                New_Energy is Starting_energy - 1,
+                solve_task_as(Task, Priority_queue, [Current_Position|Visited_node], Path, New_Energy)
             )
-        ;   % Failure case of bagof (when bagof/3 doesn't find any new states)
+            ;   % Failure case of bagof (when bagof/3 doesn't find any new states)
             format('No new states found. Proceeding with remaining states: ~w~n', [Other_states]),
-            solve_task_as(Task, Other_states, Visited_node, Path)
+            solve_task_as(Task, Other_states, Visited_node, Path, Starting_energy)
+            )
+
         )
+        
     ).
 
 
