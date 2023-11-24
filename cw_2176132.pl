@@ -14,27 +14,30 @@ solve_task_as(Task, Queue, Visited_node, Path) :-
     Queue = [state(Current_path, _)| Other_states],
     Current_path = [Current_Position|_],
     format('Current_Position: ~w~n', Current_Position),
-    format('Queue:          ~w~n', [Queue]),
+    format('Queue           : ~w~n', [Queue]),
     (achieved(Task, Current_Position) 
-        -> reverse(Current_path, Path);
-
-    otherwise 
-        -> ( bagof( state([New_position|Current_path], F), F^
-                ( map_adjacent(Current_Position, New_position, empty), 
-                  heuristic(New_position, Task, H), length(Current_path, G), F is H + G,
-                  \+ member(New_position, Visited_node),
-                  \+ member([New_position|_], Queue)
-                ),
-                New_states
-            ),
-            format('New_states:     ~w~n', [New_states]),
-            format('remain    :     ~w~n', [Other_states]),
-            append(Other_states, New_states, New_Queue),
-            format('Appended queue: ~w~n', [New_Queue]),
-            sort_queue(New_Queue, Priority_queue),
-            format('Priority_queue: ~w~n', [Priority_queue]),
-            %write(Priority_queue),
-            solve_task_as(Task, Priority_queue, [Current_Position|Visited_node], Path)
+        -> reverse(Current_path, Path) 
+        
+        ;
+        (   ( bagof(state([New_position|Current_path], F), F^(
+                    map_adjacent(Current_Position, New_position, empty),
+                    heuristic(New_position, Task, H),
+                    length(Current_path, G),
+                    F is H + G,
+                    \+ member(New_position, Visited_node),
+                    \+ member(state([New_position|_], _), Queue)
+                ), New_states)
+            ->  format('New_states      : ~w~n', [New_states]),
+                format('remain          : ~w~n', [Other_states]),
+                append(Other_states, New_states, New_Queue),
+                format('Appended queue  : ~w~n', [New_Queue]),
+                sort_queue(New_Queue, Priority_queue),
+                format('Priority_queue  : ~w~n', [Priority_queue]),
+                solve_task_as(Task, Priority_queue, [Current_Position|Visited_node], Path)
+            )
+        ;   % Failure case of bagof (when bagof/3 doesn't find any new states)
+            format('No new states found. Proceeding with remaining states: ~w~n', [Other_states]),
+            solve_task_as(Task, Other_states, Visited_node, Path)
         )
     ).
 
