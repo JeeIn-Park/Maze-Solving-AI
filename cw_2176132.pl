@@ -27,6 +27,7 @@ solve_task_as(Task, Queue, Visited_node, Path) :-
                     \+ member(New_position, Visited_node),
                     \+ member(state([New_position|_], _), Queue)
                 ), New_states)
+                
             ->  format('New_states      : ~w~n', [New_states]),
                 format('remain          : ~w~n', [Other_states]),
                 append(Other_states, New_states, New_Queue),
