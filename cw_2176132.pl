@@ -3,8 +3,9 @@ solve_task(Task,Cost) :-
     my_agent(A), 
     get_agent_position(A,P),
     heuristic(P, Task, H),
-    solve_task_as(Task, A, [state([P], H)], [], [P|Path]), 
+    solve_task_as(Task, A, [state([P], H)], [], Reversed_Path), 
 
+    reverse(Reversed_Path, [P|Path]),
     agent_do_moves(A,Path), 
     length(Path,Cost).
 
@@ -21,14 +22,14 @@ solve_task_as(Task, A, Queue, Visited_node, Path) :-
 
     ((Estimate_energy < 0 , Task \= find(c(_)))
 
-    ->  go_charge(A), !, 
+    ->  go_charge(A), 
         get_agent_position(A, New_starting_position), 
         heuristic(New_starting_position, Task, H),
         solve_task_as(Task, A, [state([New_starting_position], H)], [], Path)
 
     ;   (achieved(Task, Current_Position) 
 
-        ->  reverse(Current_path, Path) 
+        ->  Path = Current_path
 
         ;   (( findall(state(New_state_element, F), (
                     New_state_element = [New_position|Current_path],
