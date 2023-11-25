@@ -19,7 +19,8 @@ solve_task_as(Task, Queue, Visited_node, Path) :-
         -> reverse(Current_path, Path) 
         
         ;
-        (   ( bagof(state([New_position|Current_path], F), New_position^F^(
+        (   ( findall(state(New_state_element, F), (
+                    New_state_element = [New_position|Current_path],
                     map_adjacent(Current_Position, New_position, empty),
                     heuristic(New_position, Task, H),
                     length(Current_path, G),
@@ -31,8 +32,8 @@ solve_task_as(Task, Queue, Visited_node, Path) :-
             ->  format('New_states      : ~w~n', [New_states]),
                 format('remain          : ~w~n', [Other_states]),
                 append(Other_states, New_states, New_Queue),
-                format('Appended queue  : ~w~n', [New_Queue]),
-                sort_queue(New_Queue, Priority_queue),
+                format('Unsorted queue  : ~w~n', [New_Queue]),
+                sort_states_by_heuristic(New_Queue, Priority_queue),
                 format('Priority_queue  : ~w~n', [Priority_queue]),
                 solve_task_as(Task, Priority_queue, [Current_Position|Visited_node], Path)
             )
@@ -48,20 +49,18 @@ heuristic(Next_position, Task, Heuristic) :-
     ; Heuristic = 0 ).
 
 
-% Comparator predicate to compare states based on their F values while preserving original order for equal F values
-compare_state_f(<, state(_, F), state(_, F)) :- !. % Cut to avoid backtracking when F1 and F2 are equal
-compare_state_f(<, state(Index1, F), state(Index2, F)) :-
-    Index1 @< Index2, !. % Preserve original order for equal F values
-compare_state_f(<, _, _).
-compare_state_f(>, state(_, F1), state(_, F2)) :-
-    F1 > F2.
-compare_state_f(=, _, _).
+% Comparator predicate to compare states based on their heuristic values while preserving original order for equal values
+compare_state_h(Result, state(_, H1), state(_, H2)) :-
+    (   H1 < H2 ->
+        Result = (<)
+    ;   H1 > H2 ->
+        Result = (>)
+    ;   Result = (=)
+    ).
 
-
-% Predicate to sort a list of states based on their F values
-sort_queue(Queue, Priority_queue) :-
-    predsort(compare_state_f, Queue, Priority_queue).
-
+% Sorting a list of states based on their heuristic values in ascending order
+sort_states_by_heuristic(Unsorted_list, Sorted_list) :-
+    predsort(compare_state_h, Unsorted_list, Sorted_list).
 
 % True if the Task is achieved with the agent at Pos
 achieved(Task,Pos) :- 
