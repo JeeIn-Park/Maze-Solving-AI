@@ -31,9 +31,7 @@ solve_task_as(Task, Queue, Visited_node, Path) :-
                 
             ->  format('New_states      : ~w~n', [New_states]),
                 format('remain          : ~w~n', [Other_states]),
-                append(Other_states, New_states, New_Queue),
-                format('Unsorted queue  : ~w~n', [New_Queue]),
-                sort_states_by_heuristic(New_Queue, Priority_queue),
+                merge_and_sort_by_heuristic(Other_states, New_states, Priority_queue),
                 format('Priority_queue  : ~w~n', [Priority_queue]),
                 solve_task_as(Task, Priority_queue, [Current_Position|Visited_node], Path)
             )
@@ -49,18 +47,20 @@ heuristic(Next_position, Task, Heuristic) :-
     ; Heuristic = 0 ).
 
 
-% Comparator predicate to compare states based on their heuristic values while preserving original order for equal values
-compare_state_h(Result, state(_, H1), state(_, H2)) :-
-    (   H1 < H2 ->
-        Result = (<)
-    ;   H1 > H2 ->
-        Result = (>)
-    ;   Result = (=)
-    ).
+% merge_and_sort_by_heuristic(+Other_states,+New_states,-Priority_queue)
+merge_and_sort_by_heuristic(Queue,[],Queue).
+merge_and_sort_by_heuristic(Queue,[Next|Rest],Priority_queue) :-
+    insert(Queue,Next,Updated),
+    merge_and_sort_by_heuristic(Updated,Rest,Priority_queue).
 
-% Sorting a list of states based on their heuristic values in ascending order
-sort_states_by_heuristic(Unsorted_list, Sorted_list) :-
-    predsort(compare_state_h, Unsorted_list, Sorted_list).
+
+% insert(+Queue,+Next,-Updated)
+insert([],State,[State]).
+insert([state(Path, H)|Rest],state(New_path, NH),Priority_queue) :-
+    (H >= NH -> Priority_queue=[state(New_path, NH),state(Path, H)|Rest]
+    ;otherwise       -> insert(Rest,state(New_path, NH),Result),
+                        Priority_queue=[state(Path, H)|Result]).
+
 
 % True if the Task is achieved with the agent at Pos
 achieved(Task,Pos) :- 
