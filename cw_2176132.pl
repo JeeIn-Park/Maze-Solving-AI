@@ -3,7 +3,7 @@ solve_task(Task,Cost) :-
     my_agent(A), 
     get_agent_position(A,P),
     heuristic(P, Task, H),
-    solve_task_as(Task, A, [state([P], H)], [], [P|Path]), !,
+    solve_task_as(Task, A, [state([P], H)], [], [P|Path]), 
 
     agent_do_moves(A,Path), 
     length(Path,Cost).
@@ -18,15 +18,18 @@ solve_task_as(Task, A, Queue, Visited_node, Path) :-
     get_agent_energy(A, E),
     length(Current_path, Estimate_energy_consumption),
     Estimate_energy is E - Estimate_energy_consumption,
-    (Estinate_energy < 0
-    ->  solve_task(find(c(_)), _),
-        agent_topup_energy(A, c(_)),
-        get_agent_energy(A, Topuped_energy),
-        get_agent_position(A, New_starting_position),
-        solve_task_as(Task, A, [state([New_starting_position], H)], [], Path),
-    ;   (achieved(Task, Current_Position),
+
+    ((Estimate_energy < 0 , Task \= find(c(_)))
+
+    ->  go_charge(A), !, 
+        get_agent_position(A, New_starting_position), 
+        heuristic(New_starting_position, Task, H),
+        solve_task_as(Task, A, [state([New_starting_position], H)], [], Path)
+
+    ;   (achieved(Task, Current_Position) 
+
         ->  reverse(Current_path, Path) 
-        
+
         ;   (( findall(state(New_state_element, F), (
                     New_state_element = [New_position|Current_path],
                     map_adjacent(Current_Position, New_position, empty),
@@ -72,10 +75,14 @@ insert([state(Path, H)|Rest],state(New_path, NH),Priority_queue) :-
                         Priority_queue=[state(Path, H)|Result]).
 
 
+% go_charge(+A)
+go_charge(A) :-
+    solve_task(find(c(_)), _),
+    agent_topup_energy(A, c(_)).
+
+
 % achieved(+Task,+Pos)
 achieved(Task,Pos) :- 
     Task = find(Obj), map_adjacent(Pos,_,Obj)
     ;
     Task = go(Pos).
-
-    
