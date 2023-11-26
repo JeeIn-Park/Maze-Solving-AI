@@ -91,7 +91,6 @@ task_achieved(Original_task, Destination) :-
 % agent_do_move_queue(+A, +Move_queue, +Current_cost, -Cost).
 agent_do_move_queue(_, [], Current_cost, Cost) :- 
     Cost = Current_cost.
-
 agent_do_move_queue(A, [Current_move|Rest_move_queue], Current_cost, Cost) :-
     Current_move = move_queue(Task, Reversed_path),
     format('movement assigned : ~w~n', Task),
@@ -108,3 +107,15 @@ agent_do_move_queue(A, [Current_move|Rest_move_queue], Current_cost, Cost) :-
         ;   New_current_cost is Current_cost + New_cost,
             agent_do_move_queue(A, Rest_move_queue, New_current_cost, Cost)
     ).
+
+
+%Empty Move Queue: Test the behavior when Move_queue is an empty list.
+%Single Task Move Queue: Check the code's response when Move_queue contains a single task.
+%Task Queue with Multiple Tasks: Test the program with Move_queue containing multiple tasks in a sequence.
+%Tasks with Varying Energies: Check how the program handles tasks with different energy requirements.
+%Task Completion at Initial State: Test the scenario where the task can be achieved from the initial state.
+%No Possible States: Check how the program behaves when there are no possible states to move to from the current position.
+%Backtracking Due to Energy: Test a scenario where the agent backtracks due to insufficient energy.
+%Task Completion at End State: Test if the program correctly handles a scenario where the task is achieved at the end state.
+%Energy Depletion: Check the behavior when the agent's energy gets depleted during the task execution.
+%Agent Top-Up Energy Scenario: Test scenarios where Task is of the form find(c(N)) and ensure that agent_topup_energy(A, c(N)) is invoked correctly.
