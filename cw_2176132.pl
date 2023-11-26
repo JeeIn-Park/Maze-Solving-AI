@@ -5,14 +5,15 @@ solve_task(Original_task,Cost) :-
     heuristic(P, Original_task, H),
     get_agent_energy(A, E),
     % New_energy is E - 10, need to deal with query energy
-    solve_task_as(Original_task, Original_task, A, E, [state([P], H)], [], [], Move_queue), 
+    solve_task_as(Original_task, Original_task, E, [state([P], H)], [], [], Move_queue), 
 
     format('Ready for movement  : ~w~n', [Move_queue]),
     agent_do_move_queue(A, Move_queue, 0, Cost).
 
 
 % Calculate the path required to achieve a Task
-solve_task_as(Original_task, Task, A, E, Queue, Visited_node, Current_move_queue, Move_queue) :-
+% solve_task_as(+Final task, +Current Task, +Input energy, +Queue(path), +Visited node, +Current_move_queue, -Move_queue)
+solve_task_as(Original_task, Task, E, Queue, Visited_node, Current_move_queue, Move_queue) :-
     Queue = [state(Current_path, _)| Other_states],
     Current_path = [Current_Position|_],
     format('Current_Position    : ~w~n', Current_Position),
@@ -23,14 +24,15 @@ solve_task_as(Original_task, Task, A, E, Queue, Visited_node, Current_move_queue
 
     ((Estimate_energy < 0 , Task \= find(c(_)))
     ->  get_agent_position(A, Search_starting_position), 
-        solve_task_as(Original_task, find(c(_)), A, E, [state([Search_starting_position], 0)], [], Current_move_queue, Move_queue)
+        solve_task_as(Original_task, find(c(_)), E, [state([Search_starting_position], 0)], [], Current_move_queue, Move_queue)
     ;   (achieved(Task, Current_Position) 
         ->  (task_achieved(Original_task, Current_Position)
             ->  reverse([move_queue(Task, Current_path)|Current_move_queue], Move_queue),
                 format('Final move queue    : ~w~n', [Move_queue])
             ;   Current_path = [New_starting_position|_],
                 heuristic(New_starting_position, Original_task, H),
-                solve_task_as(Original_task, Original_task, A, 100, [state([New_starting_position], H)], [], [move_queue(Task, Current_path)|Current_move_queue], Move_queue))
+                % need to change this hard coded bit
+                solve_task_as(Original_task, Original_task, 100, [state([New_starting_position], H)], [], [move_queue(Task, Current_path)|Current_move_queue], Move_queue))
         ;   (findall(state(New_state_element, F), (
                     New_state_element = [New_position|Current_path],
                     map_adjacent(Current_Position, New_position, empty),
@@ -87,6 +89,7 @@ task_achieved(Original_task, Destination) :-
     Original_task = find(Obj), map_adjacent(Destination,_,Obj)
     ;
     Original_task = go(Destination).
+
 
 % agent_do_move_queue(+A, +Move_queue, +Current_cost, -Cost).
 agent_do_move_queue(_, [], Current_cost, Cost) :- 
