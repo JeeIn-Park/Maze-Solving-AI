@@ -23,7 +23,7 @@ solve_task_as(Original_task, Task, E, Queue, Visited_node, Current_move_queue, M
     Estimate_energy is E - Estimate_energy_consumption,
 
     ((Estimate_energy < 0 , Task \= find(c(_)))
-    ->  get_agent_position(A, Search_starting_position), 
+    ->  reverse(Queue, [Search_starting_position|_]),
         solve_task_as(Original_task, find(c(_)), E, [state([Search_starting_position], 0)], [], Current_move_queue, Move_queue)
     ;   (achieved(Task, Current_Position) 
         ->  (task_achieved(Original_task, Current_Position)
@@ -47,10 +47,10 @@ solve_task_as(Original_task, Task, E, Queue, Visited_node, Current_move_queue, M
                 format('remain          : ~w~n', [Other_states]),
                 merge_and_sort_by_heuristic(Other_states, New_states, Priority_queue),
                 format('Priority_queue  : ~w~n', [Priority_queue]),
-                solve_task_as(Original_task, Task, A, E, Priority_queue, [Current_Position|Visited_node], Current_move_queue, Move_queue))
+                solve_task_as(Original_task, Task, E, Priority_queue, [Current_Position|Visited_node], Current_move_queue, Move_queue))
             ;   % Failure case of bagof (when bagof/3 doesn't find any new states)
                 format('No new states found. Proceeding with remaining states: ~w~n', [Other_states]),
-                solve_task_as(Original_task, Task, A, E, Other_states, Visited_node, Current_move_queue, Move_queue)
+                solve_task_as(Original_task, Task, E, Other_states, Visited_node, Current_move_queue, Move_queue)
             )
         )
     ). % <--- The final dot, terminating the solve_task_as clause
