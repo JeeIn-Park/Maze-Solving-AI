@@ -2,6 +2,9 @@
 actor_has_link(L,A) :- 
     actor(A), wp(A,WT), wt_link(WT,L).
 
+
+% Check through the map order the oracles 
+
 % Attempt to solve by visiting each oracle in ID order
 eliminate(As,A,K) :- 
     As=[A], !
