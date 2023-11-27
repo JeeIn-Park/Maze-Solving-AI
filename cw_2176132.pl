@@ -1,38 +1,47 @@
-% Accomplish a given Task and return the Cost
+% Accomplish a given task and return the cost
+% solve_task(+Original_task, -Cost)
 solve_task(Original_task,Cost) :-
+
+    % check the agent for the task and get the initial state
     my_agent(A), 
     get_agent_position(A,P),
-    heuristic(P, Original_task, H),
     get_agent_energy(A, E),
-    % New_energy is E - 10, need to deal with query energy
-    solve_task_as(Original_task, Original_task, E, [state([P], H)], [], [], Move_queue), 
+    ailp_grid_size(N),
 
+    % calculate value needed to caculate the path for the task
+    heuristic(P, Original_task, H),
+    X is ( N * N / 4 ), ceiling(X, Max_energy),
+
+    % New_energy is E - 10, need to deal with query energy
+    solve_task_as(Original_task, Original_task, E, Max_energy, [state([P], H)], [], [], Move_queue), 
     format('Ready for movement  : ~w~n', [Move_queue]),
     agent_do_move_queue(A, Move_queue, 0, Cost).
 
 
 % Calculate the path required to achieve a Task
 % solve_task_as(+Final task, +Current Task, +Input energy, +Queue(path), +Visited node, +Current_move_queue, -Move_queue)
-solve_task_as(Original_task, Task, E, Queue, Visited_node, Current_move_queue, Move_queue) :-
-    Queue = [state(Current_path, _)| Other_states],
+solve_task_as(Original_task, Task, E, Max_energy, Path, Visited_node, Current_move_queue, Move_queue) :-
+    Path = [state(Current_path, _)| Other_states],
     Current_path = [Current_Position|_],
     format('Current_Position    : ~w~n', Current_Position),
-    format('Queue               : ~w~n', [Queue]),
+    format('Path               : ~w~n', [Path]),
     format('Current_move_queue  : ~w~n', [Current_move_queue]),
     length(Current_path, Estimate_energy_consumption),
-    Estimate_energy is E - Estimate_energy_consumption,
+    Estimate_energy is E - Estimate_energy_consumption +1,
+    format('Initial energy  : ~w~n', E),
+    format('Estimate energy  : ~w~n', Estimate_energy),
 
     ((Estimate_energy < 0 , Task \= find(c(_)))
-    ->  reverse(Queue, [Search_starting_position|_]),
-        solve_task_as(Original_task, find(c(_)), E, [state([Search_starting_position], 0)], [], Current_move_queue, Move_queue)
+    ->  reverse(Current_path, [Search_starting_position|_]),
+        solve_task_as(Original_task, find(c(_)), E, Max_energy, [state([Search_starting_position], 0)], [], Current_move_queue, Move_queue)
     ;   (achieved(Task, Current_Position) 
         ->  (task_achieved(Original_task, Current_Position)
             ->  reverse([move_queue(Task, Current_path)|Current_move_queue], Move_queue),
-                format('Final move queue    : ~w~n', [Move_queue])
+                format('Final move Path    : ~w~n', [Move_queue])
             ;   Current_path = [New_starting_position|_],
                 heuristic(New_starting_position, Original_task, H),
                 % need to change this hard coded bit
-                solve_task_as(Original_task, Original_task, 100, [state([New_starting_position], H)], [], [move_queue(Task, Current_path)|Current_move_queue], Move_queue))
+                solve_task_as(Original_task, Original_task, Max_energy, Max_energy, [state([New_starting_position], H)], [], [move_queue(Task, Current_path)|Current_move_queue], Move_queue))
         ;   (findall(state(New_state_element, F), (
                     New_state_element = [New_position|Current_path],
                     map_adjacent(Current_Position, New_position, empty),
@@ -40,17 +49,17 @@ solve_task_as(Original_task, Task, E, Queue, Visited_node, Current_move_queue, M
                     length(Current_path, G),
                     F is H + G,
                     \+ member(New_position, Visited_node),
-                    \+ member(state([New_position|_], _), Queue)
+                    \+ member(state([New_position|_], _), Path)
                 ), New_states)
                 
             ->  (format('New_states      : ~w~n', [New_states]),
                 format('remain          : ~w~n', [Other_states]),
                 merge_and_sort_by_heuristic(Other_states, New_states, Priority_queue),
                 format('Priority_queue  : ~w~n', [Priority_queue]),
-                solve_task_as(Original_task, Task, E, Priority_queue, [Current_Position|Visited_node], Current_move_queue, Move_queue))
+                solve_task_as(Original_task, Task, E, Max_energy, Priority_queue, [Current_Position|Visited_node], Current_move_queue, Move_queue))
             ;   % Failure case of bagof (when bagof/3 doesn't find any new states)
                 format('No new states found. Proceeding with remaining states: ~w~n', [Other_states]),
-                solve_task_as(Original_task, Task, E, Other_states, Visited_node, Current_move_queue, Move_queue)
+                solve_task_as(Original_task, Task, E, Max_energy, Other_states, Visited_node, Current_move_queue, Move_queue)
             )
         )
     ). % <--- The final dot, terminating the solve_task_as clause
@@ -63,13 +72,13 @@ heuristic(Next_position, Task, Heuristic) :-
 
 
 % merge_and_sort_by_heuristic(+Other_states,+New_states,-Priority_queue)
-merge_and_sort_by_heuristic(Queue,[],Queue).
-merge_and_sort_by_heuristic(Queue,[Next|Rest],Priority_queue) :-
-    insert(Queue,Next,Updated),
+merge_and_sort_by_heuristic(Path,[],Path).
+merge_and_sort_by_heuristic(Path,[Next|Rest],Priority_queue) :-
+    insert(Path,Next,Updated),
     merge_and_sort_by_heuristic(Updated,Rest,Priority_queue).
 
 
-% insert(+Queue,+Next,-Priority_queue)
+% insert(+Path,+Next,-Priority_queue)
 insert([],State,[State]).
 insert([state(Path, H)|Rest],state(New_path, NH),Priority_queue) :-
     (H >= NH -> Priority_queue=[state(New_path, NH),state(Path, H)|Rest]
@@ -114,7 +123,7 @@ agent_do_move_queue(A, [Current_move|Rest_move_queue], Current_cost, Cost) :-
 
 %Empty Move Queue: Test the behavior when Move_queue is an empty list.
 %Single Task Move Queue: Check the code's response when Move_queue contains a single task.
-%Task Queue with Multiple Tasks: Test the program with Move_queue containing multiple tasks in a sequence.
+%Task Path with Multiple Tasks: Test the program with Move_queue containing multiple tasks in a sequence.
 %Tasks with Varying Energies: Check how the program handles tasks with different energy requirements.
 %Task Completion at Initial State: Test the scenario where the task can be achieved from the initial state.
 %No Possible States: Check how the program behaves when there are no possible states to move to from the current position.
