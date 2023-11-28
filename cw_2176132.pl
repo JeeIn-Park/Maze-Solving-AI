@@ -72,33 +72,29 @@ insert([state(Path, H) | Rest], state(New_path, NH), Priority_queue) :-
         Priority_queue = [state(Path, H)|Result]).
 
 
-
 % achieved(+Task,+Pos)
 achieved(Task,Pos) :- 
     Task = find(Obj), map_adjacent(Pos,_,Obj)
-    ;Task = go(Pos).
+    ;   Task = go(Pos).
 
 
 % task_achieved(+Original_task, +Destination)
 task_achieved(Original_task, Destination) :- 
     Original_task = find(Obj), map_adjacent(Destination,_,Obj)
-    ;
-    Original_task = go(Destination).
+    ;   Original_task = go(Destination).
 
 
 % agent_do_move_queue(+A, +Move_queue, +Current_cost, -Cost).
-agent_do_move_queue(_, [], Current_cost, Cost) :- 
+agent_do_move_queue(_, [], Current_cost, Cost) :-
     Cost = Current_cost.
 agent_do_move_queue(A, [Current_move|Rest_move_queue], Current_cost, Cost) :-
     Current_move = move_queue(Task, Reversed_path),
     reverse(Reversed_path, [_| Path]),
     length(Reversed_path, New_cost),
-    agent_do_moves(A,Path),
-    (   Task = find(c(N)) 
-        ->  (   agent_topup_energy(A, c(N)),
-                New_current_cost is Current_cost + New_cost,
-                agent_do_move_queue(A, Rest_move_queue, New_current_cost, Cost)
-            )
-        ;   New_current_cost is Current_cost + New_cost,
-            agent_do_move_queue(A, Rest_move_queue, New_current_cost, Cost)
-    ).
+    agent_do_moves(A, Path),
+    (Task = find(c(N)) 
+    ->  agent_topup_energy(A, c(N)),
+        New_current_cost is Current_cost + New_cost,
+        agent_do_move_queue(A, Rest_move_queue, New_current_cost, Cost)
+    ;   New_current_cost is Current_cost + New_cost,
+        agent_do_move_queue(A, Rest_move_queue, New_current_cost, Cost)).
