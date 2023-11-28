@@ -25,16 +25,18 @@ solve_task_as(Original_task, Task, E, Max_energy, Path, Visited_node, Current_mo
     length(Current_path, Estimate_energy_consumption),
     Estimate_energy is E - Estimate_energy_consumption +1,
 
-    ((Estimate_energy < 0 , Task \= find(c(_)))
-    ->  reverse(Current_path, [Search_starting_position|_]),
-        solve_task_as(Original_task, find(c(_)), E, Max_energy, [state([Search_starting_position], 0)], [], Current_move_queue, Move_queue)
-    ;   (achieved(Task, Current_Position) 
-        ->  (task_achieved(Original_task, Current_Position)
+    (Estimate_energy < 0) % check if it run out of energy
+    ->  (Task =  find(c(_)))
+        ->  fail % <--- run out of energy, fail to find the nearest charging station
+        ;   reverse(Current_path, [Search_starting_position|_]), % <--- run out of energy, try to find the nearest charging station
+            solve_task_as(Original_task, find(c(_)), E, Max_energy, [state([Search_starting_position], 0)], [], Current_move_queue, Move_queue)
+    ;  (achieved(Task, Current_Position) % when it achieved the current goal without running out of energy
+        ->  (task_achieved(Original_task, Current_Position) % check if the final goall is achieved 
             ->  reverse([move_queue(Task, Current_path)|Current_move_queue], Move_queue)
-            ;   Current_path = [New_starting_position|_],
+            ;   Current_path = [New_starting_position|_], % if it was a subgoal, start a search again from the last location
                 heuristic(New_starting_position, Original_task, H),
                 solve_task_as(Original_task, Original_task, Max_energy, Max_energy, [state([New_starting_position], H)], [], [move_queue(Task, Current_path)|Current_move_queue], Move_queue))
-        ;   (findall(state(New_state_element, F), (
+        ;   (findall(state(New_state_element, F), ( % if it didn't achieve the goal, continue finding a path for the current goal
                     New_state_element = [New_position|Current_path],
                     map_adjacent(Current_Position, New_position, empty),
                     heuristic(New_position, Task, H),
@@ -42,8 +44,7 @@ solve_task_as(Original_task, Task, E, Max_energy, Path, Visited_node, Current_mo
                     F is H + G,
                     \+ member(New_position, Visited_node),
                     \+ member(state([New_position|_], _), Path)
-                ), New_states)
-                
+                ), New_states) 
             ->  (merge_and_sort_by_heuristic(Other_states, New_states, Priority_queue),
                 solve_task_as(Original_task, Task, E, Max_energy, Priority_queue, [Current_Position|Visited_node], Current_move_queue, Move_queue))
             ;   solve_task_as(Original_task, Task, E, Max_energy, Other_states, Visited_node, Current_move_queue, Move_queue)

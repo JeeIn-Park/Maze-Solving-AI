@@ -4,9 +4,11 @@ actor_has_link(L,A) :-
 
 
 % Check through the map order the oracles 
+    
+
 
 % Attempt to solve by visiting each oracle in ID order
-eliminate(As,A,K) :- 
+eliminate(As,A) :- 
     As=[A], !
     ;
     solve_task(find(o(K)),_), !,
@@ -16,23 +18,12 @@ eliminate(As,A,K) :-
     K1 is K+1, 
     eliminate(ViableAs,A,K1).
 
+
 % Deduce the identity of the secret actor A
 find_identity(A) :- 
-    findall(A,actor(A),As), eliminate(As,A,1).
+    findall(A,actor(A),As), 
+    eliminate(As,A).
 
-
-
-
-    candidate_number(12345).
-
-% Find hidden identity by repeatedly calling agent_ask_oracle(oscar,o(1),link,L)
-% find_identity(-A)
-find_identity(A) :-
-    (   part_module(2)
-    ->  find_identity_2(A), !
-    ;   otherwise
-    ->  find_identity_o(A), !
-    ).
 
 % loop through actors, and their list of links and compare
 % do this until only one actor remains
