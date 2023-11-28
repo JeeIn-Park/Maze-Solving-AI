@@ -20,16 +20,23 @@ find_identity(A) :-
     my_agent(G),
     get_agent_position(G, P),
     get_agent_energy(G, E),
-    %lookup map
-    
+
+    ailp_grid_size(N),
+    lookup_map(N, Oracles_and_charging_stations),
     X is ( N * N / 4 ), ceiling(X, Max_energy),
-    find_path(E, Max_energy, P).
-    %eliminate(As,A).
+
+    find_path(E, Max_energy, P, As).
+
+
+% find path 
+find_path(Initial_energy, Max_energy, Initial_position, Actor_lists) :- 
+    solve_task_as(find(o(N)), find(o(N)), Initial_energy, Max_energy, [state([Initial_position], 0)], [], [], Move_queue),
+     %eliminate(As,A).
+    
 
 
 % Predicate to loop through values of X and Y within the specified range and collect valid results in a list
-lookup_map(Map_list) :-
-    ailp_grid_size(N),
+lookup_map(N, Map_list) :-
     loop_x(1, N, [], Map_list).
 
 % Loop through values of X from 1 to N
@@ -40,7 +47,7 @@ loop_x(X, N, Accumulator, Result_list) :-
     X =< N,
     lookup_pos(p(X, 1), X_result), 
     loop_y(X, 1, N, Y_results, Valid_Y_results),
-    ((X_result = c(_); X_result = o(_))
+    ((X_result = c(ID); X_result = o(ID))
     ->  append([X_result | Valid_Y_results], Temp_list, New_list)
     ;   New_list = Valid_Y_results
     ),
@@ -52,7 +59,7 @@ loop_y(_, Y, N, [], []) :- Y > N.
 loop_y(X, Y, N, [Y_result | Rest_results], Valid_Y_results) :-
     Y =< N,
     lookup_pos(p(X, Y), Y_result),
-    (   (Y_result = c(_); Y_result = o(_))
+    (   (Y_result = c(ID); Y_result = o(ID))
     ->  append([Y_result], Temp_list, New_list)
     ;   New_list = []
     ),
@@ -61,10 +68,6 @@ loop_y(X, Y, N, [Y_result | Rest_results], Valid_Y_results) :-
     append(New_list, Tail, Valid_Y_results).
 
 
-% find path 
-find_path(Initial_energy, Max_energy, Initial_position) :- 
-    solve_task_as(find(o(N)), find(o(N)), Initial_energy, Max_energy, [state([Initial_position], 0)], [], [], Move_queue),
-    
 
 % loop through actors, and their list of links and compare
 % do this until only one actor remains
