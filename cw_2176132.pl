@@ -67,18 +67,19 @@ merge_and_sort_by_heuristic(Path,[Next|Rest],Priority_queue) :-
 
 
 % insert(+Path,+Next,-Priority_queue)
-insert([],State,[State]).
-insert([state(Path, H)|Rest],state(New_path, NH),Priority_queue) :-
-    (H >= NH -> Priority_queue=[state(New_path, NH),state(Path, H)|Rest]
-    ;otherwise       -> insert(Rest,state(New_path, NH),Result),
-                        Priority_queue=[state(Path, H)|Result]).
+insert([], State, [State]).
+insert([state(Path, H) | Rest], state(New_path, NH), Priority_queue) :-
+    (H >= NH 
+    ->  Priority_queue = [state(New_path, NH), state(Path, H) | Rest]
+    ;   insert(Rest, state(New_path, NH), Result),
+        Priority_queue = [state(Path, H)|Result]).
+
 
 
 % achieved(+Task,+Pos)
 achieved(Task,Pos) :- 
     Task = find(Obj), map_adjacent(Pos,_,Obj)
-    ;
-    Task = go(Pos).
+    ;Task = go(Pos).
 
 
 % task_achieved(+Original_task, +Destination)
