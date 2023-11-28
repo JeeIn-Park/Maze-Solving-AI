@@ -1,17 +1,14 @@
 % Accomplish a given task and return the cost
 % solve_task(+Original_task, -Cost)
 solve_task(Original_task,Cost) :-
-
     % check the agent for the task and get the initial state
     my_agent(A), 
     get_agent_position(A,P),
     get_agent_energy(A, E),
     ailp_grid_size(N),
-
     % calculate value needed to caculate the path for the task
     heuristic(P, Original_task, H),
     X is ( N * N / 4 ), ceiling(X, Max_energy),
-
     % New_energy is E - 10, need to deal with query energy
     solve_task_as(Original_task, Original_task, E, Max_energy, [state([P], H)], [], [], Move_queue), 
     agent_do_move_queue(A, Move_queue, 0, Cost).
@@ -60,10 +57,10 @@ heuristic(Next_position, Task, Heuristic) :-
 
 
 % merge_and_sort_by_heuristic(+Other_states,+New_states,-Priority_queue)
-merge_and_sort_by_heuristic(Path,[],Path).
-merge_and_sort_by_heuristic(Path,[Next|Rest],Priority_queue) :-
-    insert(Path,Next,Updated),
-    merge_and_sort_by_heuristic(Updated,Rest,Priority_queue).
+merge_and_sort_by_heuristic(Path,[], Path).
+merge_and_sort_by_heuristic(Path, [Next | Rest], Priority_queue) :-
+    insert(Path, Next, Updated),
+    merge_and_sort_by_heuristic(Updated, Rest, Priority_queue).
 
 
 % insert(+Path,+Next,-Priority_queue)
@@ -105,15 +102,3 @@ agent_do_move_queue(A, [Current_move|Rest_move_queue], Current_cost, Cost) :-
         ;   New_current_cost is Current_cost + New_cost,
             agent_do_move_queue(A, Rest_move_queue, New_current_cost, Cost)
     ).
-
-
-%Empty Move Queue: Test the behavior when Move_queue is an empty list.
-%Single Task Move Queue: Check the code's response when Move_queue contains a single task.
-%Task Path with Multiple Tasks: Test the program with Move_queue containing multiple tasks in a sequence.
-%Tasks with Varying Energies: Check how the program handles tasks with different energy requirements.
-%Task Completion at Initial State: Test the scenario where the task can be achieved from the initial state.
-%No Possible States: Check how the program behaves when there are no possible states to move to from the current position.
-%Backtracking Due to Energy: Test a scenario where the agent backtracks due to insufficient energy.
-%Task Completion at End State: Test if the program correctly handles a scenario where the task is achieved at the end state.
-%Energy Depletion: Check the behavior when the agent's energy gets depleted during the task execution.
-%Agent Top-Up Energy Scenario: Test scenarios where Task is of the form find(c(N)) and ensure that agent_topup_energy(A, c(N)) is invoked correctly.
