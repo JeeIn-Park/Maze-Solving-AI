@@ -4,34 +4,35 @@ actor_has_link(L,A) :-
 
 
 % Attempt to solve by visiting each oracle in ID order
-eliminate(As,A) :- 
-    As=[A], !
+eliminate(G, ET, As, A) :- 
+    As = [A], !
     ;
-    solve_task(find(o(_)),_), !,
-    my_agent(N),
-    agent_ask_oracle(N,o(_),link,L), 
+    get_agent_energy(G, E),
+    (E =< ET
+    ->   solve_task(find(c(N)),_)
+    ;    solve_task(find(o(N), _))
+    ), !,
+    agent_ask_oracle(G,o(N),link,L), 
     include(actor_has_link(L),As,ViableAs), 
-    eliminate(ViableAs,A).
-
+    eliminate(ET, ViableAs, A).
 
 % Deduce the identity of the secret actor A
 find_identity(A) :- 
     findall(A,actor(A),As), 
     my_agent(G),
-    get_agent_position(G, P),
-    get_agent_energy(G, E),
-
     ailp_grid_size(N),
-    lookup_map(N, Oracles_and_charging_stations),
-    X is ( N * N / 4 ), ceiling(X, Max_energy),
+    Energy_threshold is 2 * N, 
 
-    find_path(E, Max_energy, P, As).
+    %my_agent(G),
+    %get_agent_position(G, P),
+    %get_agent_energy(G, E),
 
+    %ailp_grid_size(N),
+    %lookup_map(N, Oracles_and_charging_stations),
+    %X is ( N * N / 4 ), ceiling(X, Max_energy),
 
-% find path 
-find_path(Initial_energy, Max_energy, Initial_position, Actor_lists) :- 
-    solve_task_as(find(o(N)), find(o(N)), Initial_energy, Max_energy, [state([Initial_position], 0)], [], [], Move_queue),
-     %eliminate(As,A).
+    eliminate(G, Energy_threshold, As, A).
+
     
 
 
