@@ -27,41 +27,28 @@ find_identity(A) :-
     %eliminate(As,A).
 
 
-
-lookup_map(N) :- 
+% Predicate to loop through values of X and Y within the specified range and collect results in a list
+lookup_map(Map_lsit) :-
     ailp_grid_size(N),
-    lookup_positions(N, Map_lsit),
+    loop_x(1, N, [], Map_lsit).
 
-% lookup map
-% Predicate to loop through values of X and Y within the specified range
-lookup_map(Result_list) :-
-    ailp_grid_size(N),
-    loop_x(1, N, [], Result_list).
-
-% Loop through values of X from 0 to N
-loop_x(X, N, Result_list, Result_list) :- 
-    X > N. 
-loop_x(X, N, Result_list) :-
+% Loop through values of X from 1 to N
+loop_x(X, N, Result_list, Result_list) :-  X > N. 
+loop_x(X, N, Accumulator, Result_list) :-
     X =< N,
-    lookup_pos(p(X, 0), X_Result),
+    lookup_pos(p(X, 1), X_result), 
+    loop_y(X, 1, N, Y_results),
+    append([X_result | Y_results], Temp_list, New_list),
     X_next is X + 1,
-    loop_y(X, X_next, 0, N, Y_Results),
-    append([X_Result | Y_Results], Tem_list, New_list),
-    loop_x(X_next, N, Tem_list, Result_list).
-    
+    loop_x(X_next, N, [New_list | Accumulator], Result_list).
 
-
-% Loop through values of Y from 0 to N for a specific value of X
-loop_y(_, _, Y, N, []) :- Y > N.
-loop_y(X, CurrX, Y, N, [Y_Result | Rest_results]) :-
+% Loop through values of Y from 1 to N for a specific value of X
+loop_y(_, Y, N, []) :- Y > N.
+loop_y(X, Y, N, [Y_result | Rest_results]) :-
     Y =< N,
-    lookup_pos(p(CurrX, Y), Y_Result),
-    Y1 is Y + 1,
-    loop_y(X, CurrX, Y1, N, Rest_results).
-loop_y(X, CurrX, CurrY, N, Result_list) :-
-    CurrY \= Y,
-    NextY is CurrY + 1,
-    loop_y(X, CurrX, NextY, N, Result_list).
+    lookup_pos(p(X, Y), Y_result),
+    Y_next is Y + 1,
+    loop_y(X, Y_next, N, Rest_results).
 
 
 % find path 
