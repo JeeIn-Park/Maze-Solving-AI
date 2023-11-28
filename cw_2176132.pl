@@ -27,12 +27,12 @@ solve_task_as(Original_task, Task, E, Max_energy, Path, Visited_node, Current_mo
 
     (Estimate_energy < 0) % check if it run out of energy
     ->  (Task =  find(c(_)))
-        ->  fail % <--- run out of energy, fail to find the nearest charging station
+        ->  !, fail % <--- run out of energy, fail to find the nearest charging station
         ;   reverse(Current_path, [Search_starting_position|_]), % <--- run out of energy, try to find the nearest charging station
             solve_task_as(Original_task, find(c(_)), E, Max_energy, [state([Search_starting_position], 0)], [], Current_move_queue, Move_queue)
     ;  (achieved(Task, Current_Position) % when it achieved the current goal without running out of energy
         ->  (task_achieved(Original_task, Current_Position) % check if the final goall is achieved 
-            ->  reverse([move_queue(Task, Current_path)|Current_move_queue], Move_queue)
+            ->  !, reverse([move_queue(Task, Current_path)|Current_move_queue], Move_queue)
             ;   Current_path = [New_starting_position|_], % if it was a subgoal, start a search again from the last location
                 heuristic(New_starting_position, Original_task, H),
                 solve_task_as(Original_task, Original_task, Max_energy, Max_energy, [state([New_starting_position], H)], [], [move_queue(Task, Current_path)|Current_move_queue], Move_queue))
