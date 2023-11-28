@@ -17,24 +17,25 @@ solve_task(Original_task,Cost) :-
 % Calculate the path required to achieve a Task
 % solve_task_as(+Final task, +Current Task, +Input energy, +Queue(path), +Visited node, +Current_move_queue, -Move_queue)
 solve_task_as(Original_task, Task, E, Max_energy, Path, Visited_node, Current_move_queue, Move_queue) :-
-    Path = [state(Current_path, _)| Other_states],
+    Path = [state(Current_path, _) | Other_states],
     Current_path = [Current_Position|_],
     length(Current_path, Estimate_energy_consumption),
-    Estimate_energy is E - Estimate_energy_consumption +1,
+    Estimate_energy is E - Estimate_energy_consumption + 1,
 
-    (Estimate_energy < 0) % check if it run out of energy
-    ->  (Task =  find(c(_)))
-        ->  !, fail % <--- run out of energy, fail to find the nearest charging station
-        ;   reverse(Current_path, [Search_starting_position|_]), % <--- run out of energy, try to find the nearest charging station
-            solve_task_as(Original_task, find(c(_)), E, Max_energy, [state([Search_starting_position], 0)], [], Current_move_queue, Move_queue)
-
+    (Estimate_energy < 0 % check if it runs out of energy
+    ->  (Task = find(c(_))
+        ->  !, fail % run out of energy, fail to find the nearest charging station
+        ;   reverse(Current_path, [Search_starting_position|_]), % run out of energy, try to find the nearest charging station
+            solve_task_as(Original_task, find(c(_)), E, Max_energy, [state([Search_starting_position], 0)], [], Current_move_queue, Move_queue))
+            
     ;  (achieved(Task, Current_Position) % when it achieved the current goal without running out of energy
-        ->  (task_achieved(Original_task, Current_Position) % check if the final goall is achieved 
-            ->  !, reverse([move_queue(Task, Current_path)|Current_move_queue], Move_queue)
+        ->  (task_achieved(Original_task, Current_Position) % check if the final goal is achieved 
+            ->  !, reverse([move_queue(Task, Current_path) | Current_move_queue], Move_queue)
             ;   Current_path = [New_starting_position|_], % if it was a subgoal, start a search again from the last location
                 heuristic(New_starting_position, Original_task, H),
-                solve_task_as(Original_task, Original_task, Max_energy, Max_energy, [state([New_starting_position], H)], [], [move_queue(Task, Current_path)|Current_move_queue], Move_queue))
-
+                solve_task_as(Original_task, Original_task, Max_energy, Max_energy, [state([New_starting_position], H)], [], [move_queue(Task, Current_path) | Current_move_queue], Move_queue)
+            )
+            
         ;   (findall(state(New_state_element, F), ( % if it didn't achieve the goal, continue finding a path for the current goal
                     New_state_element = [New_position|Current_path],
                     map_adjacent(Current_Position, New_position, empty),
@@ -50,6 +51,7 @@ solve_task_as(Original_task, Task, E, Max_energy, Path, Visited_node, Current_mo
             )
         )
     ).
+
 
 
 %heuristic(+Next_position, +Task, -Heuristic)
