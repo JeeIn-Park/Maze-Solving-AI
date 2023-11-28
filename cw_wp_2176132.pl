@@ -27,33 +27,41 @@ find_identity(A) :-
     %eliminate(As,A).
 
 
-% lookup map
+
 lookup_map(N) :- 
     ailp_grid_size(N),
     lookup_positions(N, Map_lsit),
 
-% Predicate to loop through values of a and b within the specified range
-lookup_positions(N, Map_lsit) :-
-    loop_x(0, N, Map_lsit).
+% lookup map
+% Predicate to loop through values of X and Y within the specified range
+lookup_map(Result_list) :-
+    ailp_grid_size(N),
+    loop_x(1, N, [], Result_list).
 
-% Loop through values of a from 0 to N
-loop_a(X, N, Map_lsit) :- A > N.
-loop_x(X, N, Map_lsit) :-
+% Loop through values of X from 0 to N
+loop_x(X, N, Result_list, Result_list) :- 
+    X > N. 
+loop_x(X, N, Result_list) :-
     X =< N,
-    lookup_pos(p(X, 0), X_result),
-    loop_y(X, N, Y_results),
+    lookup_pos(p(X, 0), X_Result),
     X_next is X + 1,
-    append([X_result | Y_results], Map_lsit, New_map_list),
-    loop_x(X_next, N, New_map_list).
+    loop_y(X, X_next, 0, N, Y_Results),
+    append([X_Result | Y_Results], Tem_list, New_list),
+    loop_x(X_next, N, Tem_list, Result_list).
+    
 
-% Loop through values of b from 0 to N for a specific value of a
-loop_y(_, Y, N, []) :-
-    Y > N.
-loop_y(X, Y, N, [Y_result | Rest_results]) :-
+
+% Loop through values of Y from 0 to N for a specific value of X
+loop_y(_, _, Y, N, []) :- Y > N.
+loop_y(X, CurrX, Y, N, [Y_Result | Rest_results]) :-
     Y =< N,
-    lookup_pos(p(X, Y), Y_result),
-    Y_next is Y + 1,
-    loop_y(X, Y_next, N, Rest_results).
+    lookup_pos(p(CurrX, Y), Y_Result),
+    Y1 is Y + 1,
+    loop_y(X, CurrX, Y1, N, Rest_results).
+loop_y(X, CurrX, CurrY, N, Result_list) :-
+    CurrY \= Y,
+    NextY is CurrY + 1,
+    loop_y(X, CurrX, NextY, N, Result_list).
 
 
 % find path 
