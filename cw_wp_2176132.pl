@@ -3,27 +3,63 @@ actor_has_link(L,A) :-
     actor(A), wp(A,WT), wt_link(WT,L).
 
 
-% Check through the map order the oracles 
-    
-
-
 % Attempt to solve by visiting each oracle in ID order
 eliminate(As,A) :- 
     As=[A], !
     ;
-    solve_task(find(o(K)),_), !,
+    solve_task(find(o(_)),_), !,
     my_agent(N),
-    agent_ask_oracle(N,o(K),link,L), 
+    agent_ask_oracle(N,o(_),link,L), 
     include(actor_has_link(L),As,ViableAs), 
-    K1 is K+1, 
-    eliminate(ViableAs,A,K1).
+    eliminate(ViableAs,A).
 
 
 % Deduce the identity of the secret actor A
 find_identity(A) :- 
     findall(A,actor(A),As), 
-    eliminate(As,A).
+    my_agent(G),
+    get_agent_position(G, P),
+    get_agent_energy(G, E),
+    %lookup map
+    
+    X is ( N * N / 4 ), ceiling(X, Max_energy),
+    find_path(E, Max_energy, P).
+    %eliminate(As,A).
 
+
+% lookup map
+lookup_map(N) :- 
+    ailp_grid_size(N),
+    lookup_positions(N, Map_lsit),
+
+% Predicate to loop through values of a and b within the specified range
+lookup_positions(N, Map_lsit) :-
+    loop_x(0, N, Map_lsit).
+
+% Loop through values of a from 0 to N
+loop_a(X, N, Map_lsit) :- A > N.
+loop_x(X, N, Map_lsit) :-
+    X =< N,
+    lookup_pos(p(X, 0), X_result),
+    loop_y(X, N, Y_results),
+    X_next is X + 1,
+    append([X_result | Y_results], Map_lsit, New_map_list),
+    loop_x(X_next, N, New_map_list).
+
+% Loop through values of b from 0 to N for a specific value of a
+loop_y(_, Y, N, []) :-
+    Y > N.
+loop_y(X, Y, N, [Y_result | Rest_results]) :-
+    Y =< N,
+    lookup_pos(p(X, Y), Y_result),
+    Y_next is Y + 1,
+    loop_y(X, Y_next, N, Rest_results).
+
+
+% find path 
+find_path(Initial_energy, Max_energy, Initial_position) :- 
+    solve_task_as(find(o(N)), find(o(N)), Initial_energy, Max_energy, [state([Initial_position], 0)], [], [], Move_queue),
+    
 
 % loop through actors, and their list of links and compare
 % do this until only one actor remains

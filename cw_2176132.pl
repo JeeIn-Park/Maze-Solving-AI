@@ -3,7 +3,7 @@
 solve_task(Original_task,Cost) :-
     % check the agent for the task and get the initial state
     my_agent(A), 
-    get_agent_position(A,P),
+    get_agent_position(A, P),
     get_agent_energy(A, E),
     ailp_grid_size(N),
     % calculate value needed to caculate the path for the task
@@ -27,12 +27,14 @@ solve_task_as(Original_task, Task, E, Max_energy, Path, Visited_node, Current_mo
         ->  !, fail % <--- run out of energy, fail to find the nearest charging station
         ;   reverse(Current_path, [Search_starting_position|_]), % <--- run out of energy, try to find the nearest charging station
             solve_task_as(Original_task, find(c(_)), E, Max_energy, [state([Search_starting_position], 0)], [], Current_move_queue, Move_queue)
+
     ;  (achieved(Task, Current_Position) % when it achieved the current goal without running out of energy
         ->  (task_achieved(Original_task, Current_Position) % check if the final goall is achieved 
             ->  !, reverse([move_queue(Task, Current_path)|Current_move_queue], Move_queue)
             ;   Current_path = [New_starting_position|_], % if it was a subgoal, start a search again from the last location
                 heuristic(New_starting_position, Original_task, H),
                 solve_task_as(Original_task, Original_task, Max_energy, Max_energy, [state([New_starting_position], H)], [], [move_queue(Task, Current_path)|Current_move_queue], Move_queue))
+
         ;   (findall(state(New_state_element, F), ( % if it didn't achieve the goal, continue finding a path for the current goal
                     New_state_element = [New_position|Current_path],
                     map_adjacent(Current_Position, New_position, empty),
