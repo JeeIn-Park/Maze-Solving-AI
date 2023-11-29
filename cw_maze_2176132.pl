@@ -1,3 +1,4 @@
+state(Move_queue, Available_agents, Waiting_list)
 Move_queue = [agent_move_queue(ID, [Path])]
 
 % initial call
@@ -6,6 +7,35 @@ solve_maze :-
     %reverse(My_agents, My_Agents),
     My_agents = [First_agent | Other_agents],
     solve_maze_dfs(My_Agents, Other_agents, []).
+
+
+calculate_next_state (State, Updated_state) :-
+    State = state(Move_queue, Available_agents, Waiting_list),
+   
+
+while doing do move, check the adjacent cells and add it to waiting list
+this needs to be done for each agents on the grid
+
+
+calculate_move_agents([], Agent_list, Move_list, Updated_move_queue) :-
+    agents_do_moves(Agent_list, Move_list).
+calculate_move_agents(Move_queue, Agent_list, Move_list, Updated_move_queue) :-
+    Move_queue = [agent_move_queue(ID, [Path]) | Move_queue_left],
+    
+  
+
+
+
+% Agents_next move
+% from current move queue, calculate next move for all agent and execute it
+% after it execute the move, calculate the next state on the main loop
+[agent_move_queue(ID, [Path])]
+agents_next_move(Move_queue) :- 
+    for each agent_move_queue, find the next movement it should make. 
+    needs to be called each time when the waiting list && available agent updated 
+when it finish the move allocated, it should be free and added to the available agent
+
+
 
 
 % main loop
@@ -25,8 +55,11 @@ solve_maze_dfs(Current_agent, Available_agents, Waiting_list, Move_queue,) :-
         agents_next_move(Updated_move_queue, Next_move_queue),
         solve_maze_dfs(Current_agent, Available_agents, Updated_waiting_list, Next_move_queue)
         if there is no more way to travel, it means it reached dead end, now the agent goes waiting list.
+        set another agent as a main agent... 
+        for all agents, needs to check adjacent cells.
         if there is waiting list and Available_agents, allocate available agent to waiting list traveling
     )
+
 
 % calculate queue and add it to move queue, [agent_move_queue(ID, [Path])]
 % need to get current move queue as well, return the updated move queue.
@@ -39,14 +72,8 @@ queue_waiting_list(Waiting_list, Available_agents, Move_queue, Updated_waiting_l
     calculate queue for the agent to go to the cell on the waiting list
 
 
-% Agents_next move
-% from current move queue, calculate next move for all agent and execute it
-% after it execute the move, calculate the next state on the main loop
-[agent_move_queue(ID, [Path])]
-agents_next_move(Move_queue) :- 
-    for each agent_move_queue, find the next movement it should make. 
-    needs to be called each time when the waiting list && available agent updated 
-when it finish the move allocated, it should be free and added to the available agent
+
+
 
 
 
