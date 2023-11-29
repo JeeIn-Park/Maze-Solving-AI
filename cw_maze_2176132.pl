@@ -1,28 +1,38 @@
-% Solve the maze, aiming to get all the agents to p(N,N)
 solve_maze :-
-    my_agents(Agents),
-    find_moves(Agents,Moves),
-    agents_do_moves(Agents,Moves),
-    solve_maze.
+    my_agents([DFS_Agent|OtherAgents]),
+    get_agent_position(DFS_Agent, Start),
+    dfs_find_path(Start, DFS_Agent, [], []),
+    leave_maze(DFS_Agent),
+    agents_follow_path(OtherAgents).
+
+%%%%%%%%%%%%%%%% USEFUL PREDICATES %%%%%%%%%%%%%%%%%%
+% Find a possible move for each agent
+dfs_find_path(Position, Agent, Path, Visited) :-
+    ailp_grid_size(N),
+    Path = [Position|Rest],
+    (Position = p(N,N) -> reverse(Visited,Path)
+    ;
+    agent_adjacent(Agent, NextPosition, empty),
+    \+ member(NextPosition,Path) 
+    -> agent_do_moves(Agent, NextPosisiton),
+    append(NextPosition,Path,NewPath)
+    ;
+    reverse(Path, RevPath),
+    RevPath = [Move|Rest],
+    agent_do_moves(Agent, Move)),
+    dfs_find_path(NextPosition, Agent, NewPath, [NextPosition|Visited]).
+
+% Agents follow the path found by DFS
+agents_follow_path([Agent|OtherAgents]) :-
+    solve_task(go(p(31,31)), _),
+    leave_maze(Agent).
+    agents_follow_path(OtherAgents).
+
+
+
+
     
 
-% Find a possible move for each agent
-find_moves([],[]).
-find_moves([A|As],[M|Moves]) :-
-    findall(P,agent_adjacent(A,P,_),PosMoves),
-    random_member(M,PosMoves),
-    find_moves(As,Moves).
-
-
-
-solve_maze_by_dfs() :-
-
-
-% True if A is a possible movement direction
-m(north). 
-m(east).
-m(south). 
-m(west).
 
 % True if p(X,Y) is on the board
 on_board(p(X,Y)) :- 
