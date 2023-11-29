@@ -18,9 +18,9 @@ eliminate(G, ET, [A|As], Visited_oracle, Result) :-
             format(' --- asking ~n'),
             agent_ask_oracle(G, o(ID), link, L),
             format('--- link : ~w~n', [L]), 
-            include(actor_has_link(L), [A|As], New_Ts)
+            include(actor_has_link(L), [A|As], New_As)
         ),
-        eliminate(G, ET, New_Ts, [ID|Visited_oracle], Result)
+        eliminate(G, ET, New_As, [ID|Visited_oracle], Result)
     ).
 
 % Deduce the identity of the secret actor A
