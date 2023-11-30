@@ -9,12 +9,10 @@ direction(p(X,Y), east, p(X1,Y)) :- X1 is X+1.
 direction(p(X,Y), north, p(X,Y1)) :- Y1 is Y-1.
 direction(p(X,Y), south, p(X,Y1)) :- Y1 is Y+1.
 
-back(east, west).
-back(south, north).
-back(west, east).
-back(north, south).
-back(Direction, Direction) :- member(Direction, [north, east, south, west]).
-
+opposite_direction(north, south).
+opposite_direction(south, north).
+opposite_direction(east, west).
+opposite_direction(west, east).
 
 % initial call
 solve_maze :-
@@ -68,9 +66,7 @@ evolve_state(State, New_state) :-
 
 % recursive call updating entities
 next_move( state([], Move_queue, Available_agents, Waiting_list, Explored_nodes), Updated_State, Temp_entities) :-
-    format('Temp_entities : ~w~n', [Temp_entities]), 
-    Updated_State = state(Temp_entities, Move_queue, Available_agents, Waiting_list, Explored_nodes), !, 
-    format('Finished - next_move').
+    Updated_State = state(Temp_entities, Move_queue, Available_agents, Waiting_list, Explored_nodes), !.
 % recursive call updating entities
 next_move(State, Updated_State, Temp_entities) :-
     format('------------------next_move------------------- ~n'),
@@ -92,8 +88,8 @@ next_move(State, Updated_State, Temp_entities) :-
     ;   format('findall ~n'), findall(path(New_position, Direction), 
             (agent_adjacent(ID, New_position, empty), 
             direction(Current_position, Direction, New_position),
-            \+ member(path(New_position, _), Explored_nodes)
-            \+ back(Going, Direction)
+            \+ member(path(New_position, _), Explored_nodes),
+            \+ opposite_direction(Going, Direction)
             ), New_paths),
         (   New_paths = []
         ->  next_move(state(Other_entities, Move_queue, [ID|Available_agents], Waiting_list, Explored_nodes), Updated_State, Temp_entities) 
@@ -132,7 +128,7 @@ queue_waiting_list(State, Updated_State) :-
     heuristic(Position, go(Position), H),
     solve_task_as(go(Position), go(Position), Max_energy, Max_energy, [state([Position], H)], [], [], [move_queue(_, Reversed_path)]),
     reverse(Reversed_path, [_ | Path]),
-    queue_waiting_list(state([entity(First_agent, Direction) | Entities], [agent_move_queue(entity(First_agent, Direction), [Path]) | _], Other_agents, Other_waiting_list, [Position | Explored_nodes]), Updated_State).
+    queue_waiting_list(state([entity(First_agent, Direction) | Entities], [agent_move_queue(entity(First_agent, Direction), [Path]) | _], Other_agents, Other_waiting_list, Explored_nodes), Updated_State).
 
 
 % translate go for one html tick then execute, update availavle agent if eligable 
