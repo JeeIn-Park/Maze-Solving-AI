@@ -51,7 +51,9 @@ evolve_state(State, New_state) :-
     next_move(State, State_1, []),
     queue_waiting_list(State_1, State_2),
     State_2 = state(Entities_2, Move_queue_2, Available_agents_2, Waiting_list_2, Explored_nodes_2),
+    format('Move_queue before execute : ~w~n', [Move_queue_2]),
     execute_queue(Move_queue_2, [], [], [], Move_queue_3),
+    format('Move_queue after execute  : ~w~n', [Move_queue_2]),
     evolve_state(state(Entities_2, Move_queue_3, Available_agents_2, Waiting_list_2, Explored_nodes_2),New_state).
 
 
