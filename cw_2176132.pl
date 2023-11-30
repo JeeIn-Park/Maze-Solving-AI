@@ -39,7 +39,7 @@ solve_task_as(Original_task, Task, E, Max_energy, Path, Visited_node, Current_mo
             % to []
         ;   (findall(state(New_state_element, F), ( % if it didn't achieve the goal, continue finding a path for the current goal
                     New_state_element = [New_position|Current_path],
-                    (map_adjacent(Current_Position, New_position, empty); map_adjacent(Current_Position, New_position, a(_))),
+                    (map_adjacent(Current_Position, New_position, empty)),
                     heuristic(New_position, Task, H),
                     length(Current_path, G),
                     F is H + G,

@@ -47,20 +47,11 @@ initialise_entities([Agent|Agents], Temp_agents, Temp_entities, Updated_agents, 
 
 % main loop
 evolve_state(State, New_state) :-
-    State = state(Entities, Move_queue, Available_agents, Waiting_list, Explored_nodes),
-    format('Current state : ~w', [Entities]),
-    format(', ~w', [Move_queue]),
-    format(', ~w', [Available_agents]),
-    format(', ~w', [Waiting_list]),
-    format(', ~w~n', [Explored_nodes]),
-    %%%%%%%%%%%%%%%%%%%%
+    %State = state(Entities, Move_queue, Available_agents, Waiting_list, Explored_nodes),
     next_move(State, State_1, []),
-    format('next_move ~n'),
     queue_waiting_list(State_1, State_2),
-    format('queue_waiting_list ~n'),
     State_2 = state(Entities_2, Move_queue_2, Available_agents_2, Waiting_list_2, Explored_nodes_2),
-    execute_queue(Move_queue_2, [], [], Move_queue_3),
-    format('execute_queue ~n'),
+    execute_queue(Move_queue_2, [], [], [], Move_queue_3),
     evolve_state(state(Entities_2, Move_queue_3, Available_agents_2, Waiting_list_2, Explored_nodes_2),New_state).
 
 
@@ -72,20 +63,11 @@ next_move(State, Updated_State, Temp_entities) :-
     format('------------------next_move------------------- ~n'),
     State = state(Entities, Move_queue, Available_agents, Waiting_list, Explored_nodes), 
     Entities = [entity(ID, Going)|Other_entities],
-    format('next_move entity : ~w', ID),
-    format(', left entities : ~w', [Other_entities]),
-    format(', entity direction : ~w~n', Going),
-    format('next_move state : ~w', [Move_queue]),
-    format(', ~w', [Available_agents]),
-    format(', ~w', [Waiting_list]),
-    format(', ~w~n', [Explored_nodes]), 
-    format('Temp_entities : ~w~n', [Temp_entities]), 
     get_agent_position(ID, Current_position),
-    format('Current position : ~w~n', Current_position),
+    
     (   achieve(ID)
-    ->  format('achieved ~n'),
-        Max_energy is N*N, my_agent(Agents), exit(Agents, p(N, N), Max_energy, [])
-    ;   format('findall ~n'), findall(path(New_position, Direction), 
+    ->  Max_energy is N*N, my_agent(Agents), exit(Agents, p(N, N), Max_energy, [])
+    ;   findall(path(New_position, Direction), 
             (agent_adjacent(ID, New_position, empty), 
             direction(Current_position, Direction, New_position),
             \+ member(path(New_position, _), Explored_nodes),
@@ -94,15 +76,10 @@ next_move(State, Updated_State, Temp_entities) :-
         (   New_paths = []
         ->  next_move(state(Other_entities, Move_queue, [ID|Available_agents], Waiting_list, Explored_nodes), Updated_State, Temp_entities) 
         ;   (   New_paths = [path(Path_position, Path_direction)]
-            ->  format('New_paths : ~w~n', [New_paths]),
-                format('single path ~n'), 
-                next_move(state(Other_entities, [agent_move_queue(entity(ID, Path_direction), [Path_position])|Move_queue], Available_agents, Waiting_list, Explored_nodes), Updated_State, [entity(ID, Path_direction)|Temp_entities]) 
-            ;   format('New_paths : ~w~n', [New_paths]),
-                format('found node ~n'), New_paths = [path(Path_position, Path_direction)| Other_paths],
+            ->  next_move(state(Other_entities, [agent_move_queue(entity(ID, Path_direction), [Path_position])|Move_queue], Available_agents, Waiting_list, Explored_nodes), Updated_State, [entity(ID, Path_direction)|Temp_entities]) 
+            ;   New_paths = [path(Path_position, Path_direction)| Other_paths],
                 append(Other_paths, Waiting_list, New_waiting_list),
                 append(Other_paths, Explored_nodes, New_Explored_nodes),
-                format('New_waiting_list : ~w~n', [New_waiting_list]),
-                format('New_Explored_nodes : ~w~n', [New_Explored_nodes]),
                 next_move(state(Other_entities, [agent_move_queue(entity(ID, Path_direction), [Path_position])|Move_queue], Available_agents, New_waiting_list, New_Explored_nodes), Updated_State, [entity(ID, Path_direction)|Temp_entities])
             )
         )
@@ -110,17 +87,12 @@ next_move(State, Updated_State, Temp_entities) :-
 
 % queue_waiting_list(State_1, State_2),
 % if there is any available agents and if there is any nodes in waiting list, start exploring that node
-queue_waiting_list(State, State) :-
-    State = state(_, _, _, [], _);
-    State = state(_, _, [], _, _).
+queue_waiting_list(State, Updated_State) :-
+    State = state(_, _, _, [], _), Updated_State = State;
+    State = state(_, _, [], _, _), Updated_State = State.
 queue_waiting_list(State, Updated_State) :-
     format('------------------queue_waiting_list------------------- ~n'),
     State = state(Entities, Move_queue, Available_agents, Waiting_list, Explored_nodes),
-    format('queue_waiting_list entities : ~w~n', [Entities]),
-    format('queue_waiting_list state : ~w', [Move_queue]),
-    format(', ~w', [Available_agents]),
-    format(', ~w', [Waiting_list]),
-    format(', ~w~n', [Explored_nodes]),
     Available_agents = [First_agent | Other_agents],
     Waiting_list = [path(Position, Direction) | Other_waiting_list],
     ailp_grid_size(N),
@@ -128,21 +100,24 @@ queue_waiting_list(State, Updated_State) :-
     heuristic(Position, go(Position), H),
     solve_task_as(go(Position), go(Position), Max_energy, Max_energy, [state([Position], H)], [], [], [move_queue(_, Reversed_path)]),
     reverse(Reversed_path, [_ | Path]),
-    queue_waiting_list(state([entity(First_agent, Direction) | Entities], [agent_move_queue(entity(First_agent, Direction), [Path]) | _], Other_agents, Other_waiting_list, Explored_nodes), Updated_State).
+    queue_waiting_list(state([entity(First_agent, Direction) | Entities], [agent_move_queue(entity(First_agent, Direction), [Path]) | Move_queue], Other_agents, Other_waiting_list, Explored_nodes), Updated_State).
 
 
 % translate go for one html tick then execute, update availavle agent if eligable 
-execute_queue([], Agent_list, Move_list, []) :-
+execute_queue([], Agent_list, Move_list, Move_queue, Move_queue) :-
     agents_do_moves(Agent_list, Move_list).
-execute_queue(Move_queue, Agent_list, Move_list, Updated_move_queue) :-
+execute_queue(Move_queue, Agent_list, Move_list, Temp_move_queue, Updated_move_queue) :-
         format('------------------execute_queue------------------- ~n'),
     Move_queue = [agent_move_queue(entity(ID, Direction), [Next_position|Path]) | Move_queue_left],
     (   Path = []
     ->  (   Direction = exit
         ->   leave_maze(ID)
-        ;   execute_queue(Move_queue_left, [ID|Agent_list], [Next_position|Move_list], Updated_move_queue)
+        ;   (   lookup_pos(Next_position, empty)
+            ->  execute_queue(Move_queue_left, [ID|Agent_list], [Next_position|Move_list], Temp_move_queue, Updated_move_queue)
+            ;   execute_queue(Move_queue_left, Agent_list, Move_list, [agent_move_queue(entity(ID, Direction), [Next_position|Path])|Temp_move_queue], Updated_move_queue)
+            )
         )
-    ;   execute_queue(Move_queue_left, [ID|Agent_list], [Next_position|Move_list], [agent_move_queue(entity(ID, Direction), [Path])|Updated_move_queue])
+    ;   execute_queue(Move_queue_left, [ID|Agent_list], [Next_position|Move_list], [agent_move_queue(entity(ID, Direction), [Path])|Temp_move_queue], Updated_move_queue)
     ).
 
 
