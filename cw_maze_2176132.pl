@@ -28,6 +28,7 @@ evolve_state(Entities, State, New_state) :-
     evolve_state.
 
 
+% only for exploring, when it's go, it dosesn't update explored node
 % recursive call updating entities
 next_move(entity(ID, Going), State, Updated_State) :-
     State = state(Move_queue, Available_agents, Waiting_list, Exploered_nodes),
@@ -36,24 +37,21 @@ next_move(entity(ID, Going), State, Updated_State) :-
         (agent_adjacent(ID, New_position, empty), 
         direction(Current_position, Direction, New_position),
         \+ back(Going,Direction)),
+        \+ member(path(New_position, _), Exploered_nodes),
         New_paths),
     (  New_paths = [path(Path_position, _)]
     ->  Updated_State = state([agent_move_queue(entity(ID, Going), [Path_position])|Move_queue], Available_agents, Waiting_list, Exploered_nodes)
     ;   (   New_paths = []
         ->  Updated_State = state(Move_queue, [ID|Available_agents], Waiting_list, Exploered_nodes)
         ;   member(path(Step, Going), New_paths),
-            Updated_State = state([agent_move_queue(entity(ID, Going), [Step])|Move_queue], Available_agents, Updated_waiting_list, Exploered_nodes),
+            Updated_State = state([agent_move_queue(entity(ID, Going), [Step])|Move_queue], Available_agents, Updated_waiting_list, Updated_Exploered_nodes]),
             select(path(Step, Going), New_paths, _),
-            append(New_paths, Waiting_list, Updated_waiting_list)
+            append(New_paths, Waiting_list, Updated_waiting_list),
+            append(New_paths, Exploered_nodes, Updated_Exploered_nodes)
         )
     ).
 
 
-
-Explored_node calculator
-% when it has more than two adjacent empty cells, it's considered as node. 
-% it adds adjacent cells to waiting lists when it hasn't been explored.
-% after add adjacent cells to the waiting list, add the node to explored_node.
 
 queue_waiting_list(Entities, State, State) :-
     State = state(Move_queue, [], Waiting_list, Exploered_nodes);
