@@ -10,7 +10,6 @@ solve_task(Original_task,Cost) :-
     heuristic(P, Original_task, H),
     X is ( N * N / 4 ), ceiling(X, Max_energy),
     % New_energy is E - 10, need to deal with query energy
-    format('solve task : ~w~n', Original_task),
     solve_task_as(Original_task, Original_task, E, Max_energy, [state([P], H)], [], [], Move_queue), 
     agent_do_move_queue(A, Move_queue, 0, Cost).
 
@@ -29,7 +28,7 @@ solve_task_as(Original_task, Task, E, Max_energy, Path, Visited_node, Current_mo
         ;   reverse(Current_path, [Search_starting_position|_]), % run out of energy, try to find the nearest charging station
             solve_task_as(Original_task, find(c(_)), E, Max_energy, [state([Search_starting_position], 0)], [], Current_move_queue, Move_queue))
             
-    ;  (achieved(Task, Current_Position), format('achieved : ~w~n', Task)% when it achieved the current goal without running out of energy
+    ;  (achieved(Task, Current_Position)% when it achieved the current goal without running out of energy
         ->  (task_achieved(Original_task, Current_Position) % check if the final goal is achieved 
             ->  !, reverse([move_queue(Task, Current_path) | Current_move_queue], Move_queue)
             ;   Current_path = [New_starting_position|_], % if it was a subgoal, start a search again from the last location
@@ -37,8 +36,7 @@ solve_task_as(Original_task, Task, E, Max_energy, Path, Visited_node, Current_mo
                 solve_task_as(Original_task, Original_task, Max_energy, Max_energy, [state([New_starting_position], H)], [], [move_queue(Task, Current_path) | Current_move_queue], Move_queue)
             )
             
-        ;   format('finding way ~n'),
-            (findall(state(New_state_element, F), ( % if it didn't achieve the goal, continue finding a path for the current goal
+        ;   (findall(state(New_state_element, F), ( % if it didn't achieve the goal, continue finding a path for the current goal
                     New_state_element = [New_position|Current_path],
                     map_adjacent(Current_Position, New_position, empty),
                     heuristic(New_position, Task, H),
@@ -83,7 +81,7 @@ achieved(go(Pos), Pos).
 achieved(find(Obj), Pos) :-
     map_adjacent(Pos, _, Obj),
     ( Obj = o(ID) 
-    ->  my_agent(A), \+ agent_check_oracle(A, o(ID)),  format('already visited by: ~w~n', A)
+    ->  my_agent(A), \+ agent_check_oracle(A, o(ID))
     ;   true 
     ).
 

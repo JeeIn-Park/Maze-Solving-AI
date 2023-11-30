@@ -16,46 +16,63 @@ back(D1, D2) :- back(D2, D1).
 
 % initial call
 solve_maze :-
-    my_agents([Agent|My_agents]),
-    evolve_state([entity(Agent, south)], state([], My_agents, [], []), _).
+    format('------------------solve maze------------------- ~n'),
+    my_agents(My_agents),
+    My_agents = [Agent|Agents],
+    format('my_agents : ~w~n', [My_agents]),
+    evolve_state([entity(Agent, south)], state([], Agents, [], []), _).
 
 
 % main loop
 evolve_state(Entities, State, New_state) :-
     State = state(Move_queue, Available_agents, Waiting_list, Exploered_nodes),
+    format('Current state : ~w', [Move_queue]),
+    format(', ~w', [Available_agents]),
+    format(', ~w', [Waiting_list]),
+    format(', ~w~n', [Exploered_nodes]),
+    %%%%%%%%%%%%%%%%%%%%
     next_move(Entities, State, State_1, Entities_1),
+    format('next_move ~n'),
     queue_waiting_list(Entities_1, State_1, State_2, Entities_2),
+    format('queue_waiting_list ~n'),
     State_2 = state(Move_queue_2, Available_agents_2, Waiting_list_2, Exploered_nodes_2),
     execute_queue(Move_queue_2, [], [], Move_queue_3),
+    format('execute_queue ~n'),
     evolve_state(Entities_2, state(Move_queue_3, Available_agents_2, Waiting_list_2, Exploered_nodes_2),New_state).
 
 
 % recursive call updating entities
 next_move([], State, State, []).
 next_move([entity(ID, Going)|Entities], State, Updated_State, Updated_entities) :-
+    format('next_move entity : ~w', ID),
+    format(', entity direction : ~w', Going)
     State = state(Move_queue, Available_agents, Waiting_list, Exploered_nodes),
+    format('next_move state : ~w', [Move_queue]),
+    format(', ~w', [Available_agents]),
+    format(', ~w', [Waiting_list]),
+    format(', ~w~n', [Exploered_nodes]),
     get_agent_position(ID, Current_position),
-    (   achieved(ID)
-    ->  Max_energy is N*N, my_agent(Agents), exit(Agents, Position, Max_energy, [])
-    ;   findall(path(New_position, Direction), 
-        (agent_adjacent(ID, New_position, empty), 
-        direction(Current_position, Direction, New_position),
-        \+ back(Going,Direction)),
-        \+ member(path(New_position, _), Exploered_nodes),
-        New_paths),
-        (  New_paths = [path(Path_position, Path_direction)]
-        ->  next_move(Entities, state([agent_move_queue(entity(ID, Path_direction), [Path_position])|Move_queue], Available_agents, Waiting_list, Exploered_nodes), Updated_State, [entity(ID, Path_direction)|Updated_entities]) 
-        ;   (   New_paths = []
-            ->  next_move(Entities, state(Move_queue, [ID|Available_agents], Waiting_list, Exploered_nodes), Updated_State, Updated_entities) 
+    format('Current position : ~w~n', Current_position),
+    (   achieve(ID)
+    ->  format('achieved ~n'),
+        Max_energy is N*N, my_agent(Agents), exit(Agents, Position, Max_energy, [])
+    ;   (   findall(path(New_position, Direction), 
+            (agent_adjacent(ID, New_position, empty), 
+            direction(Current_position, Direction, New_position),
+            \+ back(Going,Direction),
+            \+ member(path(New_position, _), Exploered_nodes)),
+            New_paths)
+        -> next_move(Entities, state(Move_queue, [ID|Available_agents], Waiting_list, Exploered_nodes), Updated_State, Updated_entities) 
+        ;   (   New_paths = [path(Path_position, Path_direction)]
+            ->  next_move(Entities, state([agent_move_queue(entity(ID, Path_direction), [Path_position])|Move_queue], Available_agents, Waiting_list, Exploered_nodes), Updated_State, [entity(ID, Path_direction)|Updated_entities]) 
             ;   New_paths = [path(Path_position, Path_direction)| Other_paths],
-            select(path(Path_position, Path_direction), New_paths, Updated_paths),
-            append(Updated_paths, Waiting_list, New_waiting_list),
-            append(Updated_paths, Exploered_nodes, New_Exploered_nodes),
-            next_move(Entities,  state([agent_move_queue(entity(ID, Path_direction), [Path_position])|Move_queue], Available_agents, Updated_waiting_list, Updated_Exploered_nodes]), Updated_State, [entity(ID, Path_direction)|Updated_entities]
+                select(path(Path_position, Path_direction), New_paths, Updated_paths),
+                append(Updated_paths, Waiting_list, New_waiting_list),
+                append(Updated_paths, Exploered_nodes, New_Exploered_nodes),
+                next_move(Entities,  state([agent_move_queue(entity(ID, Path_direction), [Path_position])|Move_queue], Available_agents, Updated_waiting_list, Updated_Exploered_nodes), Updated_State, [entity(ID, Path_direction)|Updated_entities])
             )
         )
     ).
-
 
 
 
@@ -89,7 +106,7 @@ execute_queue(Move_queue, Agent_list, Move_list, Updated_move_queue) :-
 
 
 % once an agent found an exit, the maze is solved and other agents go exit stopping exploring
-achieved(Agent) :-
+achieve(Agent) :-
     get_agent_position(Agent, Position),
     ailp_grid_size(N),
     Position = p(N,N),
