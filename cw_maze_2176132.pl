@@ -11,16 +11,40 @@ direction(p(X,Y), south, p(X,Y1)) :- Y1 is Y+1.
 
 back(east, west).
 back(south, north).
-back(D1, D2) :- back(D2, D1).
+back(west, east).
+back(north, south).
+back(Direction, Direction) :- member(Direction, [north, east, south, west]).
 
 
 % initial call
 solve_maze :-
     format('------------------solve maze------------------- ~n'),
     my_agents(My_agents),
-    My_agents = [Agent|Agents],
     format('my_agents : ~w~n', [My_agents]),
-    evolve_state(state([entity(Agent, south)], [], Agents, [], []), _).
+    initialise_entities(My_agents, [], [], Agents, Entities),
+    evolve_state(state(Entities, [], Agents, [], []), _).
+
+
+initialise_entities([], Agents, Entities, Agents, Entities) :-
+    format('finished').
+initialise_entities([Agent|Agents], Temp_agents, Temp_entities, Updated_agents, Updated_entities) :-
+    get_agent_position(Agent, Current_position),
+    format('1'),
+    findall(
+        path(Pos, Direction), 
+        (
+            agent_adjacent(Agent, Pos, empty), 
+            direction(Current_position, Direction, Pos)
+        ), 
+        New_paths
+    ),
+    format('2'),
+    (
+        New_paths = []
+        ->  format('3'), initialise_entities(Agents, [Agent|Temp_agents], Temp_entities, Updated_agents, Updated_entities)
+        ;   New_paths = [path(_, D)|_], format('4~n'),
+            initialise_entities(Agents, Temp_agents, [entity(Agent, D)|Temp_entities], Updated_agents, Updated_entities)
+    ).
 
 
 % main loop
@@ -44,8 +68,10 @@ evolve_state(State, New_state) :-
 
 % recursive call updating entities
 next_move(State, Updated_State, Temp_entities) :-
-    State = state([], Move_queue, Available_agents, Waiting_list, Exploered_nodes),
-    Updated_State = state(Temp_entities, Move_queue, Available_agents, Waiting_list, Exploered_nodes).
+    State = state([], Move_queue, Available_agents, Waiting_list, Explored_nodes),
+    Updated_State = state(Temp_entities, Move_queue, Available_agents, Waiting_list, Explored_nodes),
+    format('Finished - Empty Entities List').
+
 next_move(State, Updated_State, Temp_entities) :-
     format('------------------next_move------------------- ~n'),
     State = state(Entities, Move_queue, Available_agents, Waiting_list, Exploered_nodes),
@@ -62,12 +88,15 @@ next_move(State, Updated_State, Temp_entities) :-
     (   achieve(ID)
     ->  format('achieved ~n'),
         Max_energy is N*N, my_agent(Agents), exit(Agents, Position, Max_energy, [])
-    ;   format('findall ~n'), ( findall(path(New_position, Direction), 
+    ;   format('findall ~n'), findall(path(New_position, Direction), 
             (agent_adjacent(ID, New_position, empty), 
             direction(Current_position, Direction, New_position),
-            \+ member(path(New_position, _), Exploered_nodes)
-            ), New_paths) %% need to add more conditions,,, avoiding loop
-        -> (   New_paths = [path(Path_position, Path_direction)]
+            \+ member(path(New_position, _), Exploered_nodes),
+            \+ back(Going, Direction)
+            ), New_paths),
+        (   New_paths = []
+        ->  next_move(state(Other_entities, Move_queue, [ID|Available_agents], Waiting_list, Exploered_nodes), Updated_State, Temp_entities) 
+        ;   (   New_paths = [path(Path_position, Path_direction)]
             ->  format('New_paths : ~w~n', [New_paths]),
                 format('single path ~n'), 
                 next_move(state(Other_entities, [agent_move_queue(entity(ID, Path_direction), [Path_position])|Move_queue], Available_agents, Waiting_list, Exploered_nodes), Updated_State, [entity(ID, Path_direction)|Temp_entities]) 
@@ -81,7 +110,6 @@ next_move(State, Updated_State, Temp_entities) :-
                 format('New_Exploered_nodes : ~w~n', [New_Exploered_nodes]),
                 next_move(state(Other_entities, [agent_move_queue(entity(ID, Path_direction), [Path_position])|Move_queue], Available_agents, New_waiting_list, New_Exploered_nodes), Updated_State, [entity(ID, Path_direction)|Temp_entities])
             )
-        ;    next_move(state(Other_entities, Move_queue, [ID|Available_agents], Waiting_list, Exploered_nodes), Updated_State, Temp_entities) 
         )
     ).
 
