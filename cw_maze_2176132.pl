@@ -46,7 +46,7 @@ evolve_state(State, New_state) :-
 next_move(State, Updated_State, Temp_entities) :-
     State = state([], Move_queue, Available_agents, Waiting_list, Exploered_nodes),
     Updated_State = state(Temp_entities, Move_queue, Available_agents, Waiting_list, Exploered_nodes).
-next_move(State, Updated_State) :-
+next_move(State, Updated_State, Temp_entities) :-
     format('------------------next_move------------------- ~n'),
     State = state(Entities, Move_queue, Available_agents, Waiting_list, Exploered_nodes),
     Entities = [entity(ID, Going)|Other_entities],
@@ -85,11 +85,13 @@ next_move(State, Updated_State) :-
     ).
 
 
+% queue_waiting_list(State_1, State_2),
 % if there is any available agents and if there is any nodes in waiting list, start exploring that node
-queue_waiting_list(Entities, State, State, Entities) :-
-    State = state(_, [], Waiting_list, _).
-queue_waiting_list(Entities, State, Updated_State, Updated_entities) :-
-    State = state(Move_queue, Available_agents, Waiting_list, Explored_nodes),
+queue_waiting_list(State, State) :-
+    State = state(_, _, _, [], _);
+    State = state(_, _, [], _, _).
+queue_waiting_list(State, Updated_State) :-
+    State = state(Entities, Move_queue, Available_agents, Waiting_list, Explored_nodes),
     format('queue_waiting_list entities : ~w~n', [Entities]),
     format('queue_waiting_list state : ~w', [Move_queue]),
     format(', ~w', [Available_agents]),
@@ -102,7 +104,7 @@ queue_waiting_list(Entities, State, Updated_State, Updated_entities) :-
     heuristic(Position, go(Position), H),
     solve_task_as(go(Position), go(Position), Max_energy, Max_energy, [state([Position], H)], [], [], [move_queue(_, Reversed_path)]),
     reverse(Reversed_path, [_ | Path]),
-    queue_waiting_list(Entities, state([agent_move_queue(entity(First_agent, Direction), [Path]) | _], Other_agents, Other_waiting_list, [Position | Explored_nodes]), Updated_State, [entity(First_agent, Direction) | Entities]).
+    queue_waiting_list(state([entity(First_agent, Direction) | Entities], [agent_move_queue(entity(First_agent, Direction), [Path]) | _], Other_agents, Other_waiting_list, [Position | Explored_nodes]), Updated_State).
 
 
 % translate go for one html tick then execute, update availavle agent if eligable 
