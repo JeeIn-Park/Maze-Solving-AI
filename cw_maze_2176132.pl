@@ -61,20 +61,17 @@ next_move([entity(ID, Going)|Entities], State, Updated_State, Updated_entities) 
 
 % if there is any available agents and if there is any nodes in waiting list, start exploring that node
 queue_waiting_list(Entities, State, State, Entities) :-
-    State = state(Move_queue, [], Waiting_list, Exploered_nodes);
-    State = state(Move_queue, Available_agents, [], Exploered_nodes).
-queue_waiting_list(Entities, State, Updated_State, Updated_entities)
-    State = state(Move_queue, Available_agents, Waiting_list, Exploered_nodes),
-    Waiting_list = [path(Position | Direction) | Other_waiting_list],
+    State = state(_, [], Waiting_list, _).
+queue_waiting_list(Entities, State, Updated_State, Updated_entities) :-
+    State = state(_, Available_agents, Waiting_list, Explored_nodes),
     Available_agents = [First_agent | Other_agents],
+    Waiting_list = [path(Position, Direction) | Other_waiting_list],
     ailp_grid_size(N),
-    Max_energy is N*N,
+    Max_energy is N * N,
     heuristic(Position, go(Position), H),
     solve_task_as(go(Position), go(Position), Max_energy, Max_energy, [state([Position], H)], [], [], [move_queue(_, Reversed_path)]),
-    reverse(Reversed_path, [_| Path]),
-    queue_waiting_list(Entities, 
-        state([agent_move_queue(entity(First_agent, Direction), [Path])|Move_queue], Other_agents, Other_waiting_list, [Position|Exploered_nodes]), Updated_State, [entity(First_agent, Direction)|Entities]).
-
+    reverse(Reversed_path, [_ | Path]),
+    queue_waiting_list(Entities, state([agent_move_queue(entity(First_agent, Direction), [Path]) | _], Other_agents, Other_waiting_list, [Position | Explored_nodes]), Updated_State, [entity(First_agent, Direction) | Entities]).
 
 
 % translate go for one html tick then execute, update availavle agent if eligable 
