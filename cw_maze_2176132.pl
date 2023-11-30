@@ -64,8 +64,9 @@ next_move(State, Updated_State, Temp_entities) :-
         Max_energy is N*N, my_agent(Agents), exit(Agents, Position, Max_energy, [])
     ;   format('findall ~n'), ( findall(path(New_position, Direction), 
             (agent_adjacent(ID, New_position, empty), 
-            direction(Current_position, Direction, New_position)),
-            New_paths) %% need to add more conditions,,, avoiding loop
+            direction(Current_position, Direction, New_position),
+            \+ member(path(New_position, _), Exploered_nodes)
+            ), New_paths) %% need to add more conditions,,, avoiding loop
         -> (   New_paths = [path(Path_position, Path_direction)]
             ->  format('New_paths : ~w~n', [New_paths]),
                 format('single path ~n'), 
