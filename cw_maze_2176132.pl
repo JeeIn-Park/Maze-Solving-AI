@@ -15,41 +15,36 @@ back(D1, D2) :- back(D2, D1).
 
 % initial call
 solve_maze :-
-    my_agents(My_agents),
-    initialise_agents(My_agents, Entities)
-    evolve_state(Entities, state([], My_agents, [], []), _).
-
-
-% initialise agents
-initialise_agents([], []).
-initialise_agents([Agent|Agents], Entities) :-
-    initialise_agents(Agents, [entity(Agent, south)|Entities]).
+    my_agents([Agent|My_agents]),
+    evolve_state(state([entity(Agent, south)], [], My_agents, [], []), _).
 
 
 % main loop
-evolve_state(Entities, State, New_state) :-
-    State = state(Move_queue, Available_agents, Waiting_list, Exploered_node),
-for all entity (next_move)
+evolve_state(State, New_state) :-
+    State = state(Entities, Move_queue, Available_agents, Waiting_list, Exploered_nodes),
+    for all entity (next_move)
     append(Free_agents, Available_agents, Arrived, New_available_agent)
-    execute_move_queue.
+    execute_move_queue
+    evolve_state.
 
 
 
-next_move(Entity, State, Updated_State) :-
-    State = state(Move_queue, Available_agents, Waiting_list, Exploered_node),
-    get_agent_position(Entity(ID, Going), Current_position),
+next_move(State, Updated_State) :-
+    State = state([entity(ID, Going)|Entities], Move_queue, Available_agents, Waiting_list, Exploered_nodes),
+    get_agent_position(ID, Current_position),
     findall(path(New_position, Direction), 
         (agent_adjacent(ID, New_position, empty), 
         direction(Current_position, Direction, New_position),
         \+ back(Going,Direction)),
         New_paths),
-    (  New_paths = [path(Queue_position, _)]
-    ->  Updated_State = state([agent_move_queue(Entity, [Queue_position])|Move_queue], Available_agents, Waiting_list, Exploered_node)
+    (  New_paths = [path(Path_position, _)]
+    ->  Updated_State = state([entity(ID, Going)|Entities], [agent_move_queue(entity(ID, Going), [Path_position])|Move_queue], Available_agents, Waiting_list, Exploered_nodes)
     ;   (   New_paths = []
-        ->  Updated_State = state(Move_queue, [ID|Available_agents], Waiting_list, Exploered_node)
-        ;   append(New_paths, Waiting_list, Updated_waiting_list),
-            member(path(Queue_position, Going), New_paths),
-            Updated_State = state([agent_move_queue(Entity, [Queue_position])|Move_queue], Available_agents, Updated_waiting_list, Exploered_node)
+        ->  Updated_State = state(Entities, Move_queue, [ID|Available_agents], Waiting_list, Exploered_nodes)
+        ;   member(path(Step, Going), New_paths),
+            Updated_State = state([entity(ID, Going)|Entities], [agent_move_queue(entity(ID, Going), [Step])|Move_queue], Available_agents, Updated_waiting_list, Exploered_nodes),
+            select(path(Step, Going), New_paths, _),
+            append(New_paths, Waiting_list, Updated_waiting_list)
         )
     ).
 
@@ -65,7 +60,8 @@ Explored_node calculator
 % calculate queue and add it to move queue, [agent_move_queue(ID, [Path])]
 % need to get current move queue as well, return the updated move queue.
 % if there is waiting list and if there is Available_agents, allocate available agent to waiting list traveling
-queue_waiting_list([], _, Move_queue, [], Move_queue).
+
+queue_waiting_list([], Available_agents, Move_queue, [], Move_queue).
 queue_waiting_list(Waiting_list, [], Move_queue, Waiting_list, Move_queue). 
 queue_waiting_list(Waiting_list, Available_agents, Move_queue, Updated_waiting_list, Updated_move_queue) :-
     Waiting_list = [Most_recent_found | Waiting_list_left],
