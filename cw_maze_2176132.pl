@@ -73,7 +73,7 @@ next_move(State, Updated_State, Temp_entities) :-
     get_agent_position(ID, Current_position),
     
     (   achieve(ID)
-    ->  Max_energy is N*N, my_agent(Agents), exit(Agents, p(N, N), Max_energy, [])
+    ->  ailp_grid_size(N), Max_energy is N*N, my_agent(Agents), exit(Agents, p(N, N), Max_energy, [])
     ;   findall(path(New_position, Direction), 
             (agent_adjacent(ID, New_position, empty), 
             direction(Current_position, Direction, New_position),
@@ -146,11 +146,13 @@ execute_queue(Move_queue, Agent_list, Move_list, Temp_move_queue, Updated_move_q
     (   Path = []
     ->  (   Direction = exit
         ->   leave_maze(ID)
-        ;   (   lookup_pos(Next_position, empty)
-            ->  format('move available ~n'), % add left queue to temp move queue, 
+        ;   (   lookup_pos(Next_position, c(ID2))
+            ->  format('move swaped ~n'),
+                member(agent_move_queue(entity(ID2, Direction2), [Next_position2|Path2]), Move_queue_left),
+                select(agent_move_queue(entity(ID2, Direction2), [Next_position2|Path2]), Move_queue_left, Swaped_move_queue),
+                execute_queue(Swaped_move_queue, Agent_list, Move_list, [agent_move_queue(entity(ID, Direction2), Path2), agent_move_queue(entity(ID2, Direction), Path)|Temp_move_queue], Updated_move_queue)
+            ;   format('move available ~n'), % add left queue to temp move queue, 
                 execute_queue(Move_queue_left, [ID|Agent_list], [Next_position|Move_list], Temp_move_queue, Updated_move_queue)
-            ;   format('move not available, wait ~n'),
-                execute_queue(Move_queue_left, Agent_list, Move_list, [agent_move_queue(entity(ID, Direction), [Next_position|Path])|Temp_move_queue], Updated_move_queue)
             )
         )
     ;   execute_queue(Move_queue_left, [ID|Agent_list], [Next_position|Move_list], [agent_move_queue(entity(ID, Direction), Path)|Temp_move_queue], Updated_move_queue)
