@@ -53,7 +53,7 @@ evolve_state(State, New_state) :-
     State_2 = state(Entities_2, Move_queue_2, Available_agents_2, Waiting_list_2, Explored_nodes_2),
     format('Move_queue before execute : ~w~n', [Move_queue_2]),
     execute_queue(Move_queue_2, [], [], [], Move_queue_3),
-    format('Move_queue after execute  : ~w~n', [Move_queue_2]),
+    format('Move_queue after execute  : ~w~n', [Move_queue_3]),
     evolve_state(state(Entities_2, Move_queue_3, Available_agents_2, Waiting_list_2, Explored_nodes_2),New_state).
 
 
@@ -89,20 +89,19 @@ next_move(State, Updated_State, Temp_entities) :-
 
 % queue_waiting_list(State_1, State_2),
 % if there is any available agents and if there is any nodes in waiting list, start exploring that node
-queue_waiting_list(State, Updated_State) :-
-    State = state(_, _, _, [], _), Updated_State = State;
-    State = state(_, _, [], _, _), Updated_State = State.
+queue_waiting_list(State, State) :-
+    State = state(_, _, _, [], _);
+    State = state(_, _, [], _, _).
 queue_waiting_list(State, Updated_State) :-
     format('------------------queue_waiting_list------------------- ~n'),
     State = state(Entities, Move_queue, Available_agents, Waiting_list, Explored_nodes),
-    Available_agents = [First_agent | Other_agents],
-    Waiting_list = [path(Position, Direction) | Other_waiting_list],
+    format('State >>> Etities : ~w~n Move_queue : ~w~n Available_agents : ~w~n Waiting_list : ~w~n Explored_nodes : ~w~n', [Entities, Move_queue, Available_agents, Waiting_list, Explored_nodes]),
+    Available_agents = [Agent | Agents],
+    Waiting_list = [path(Position, Direction) | Waiting_list_left],
     ailp_grid_size(N),
-    Max_energy is N * N,
-    heuristic(Position, go(Position), H),
-    solve_task_as(go(Position), go(Position), Max_energy, Max_energy, [state([Position], H)], [], [], [move_queue(_, Reversed_path)]),
-    reverse(Reversed_path, [_ | Path]),
-    queue_waiting_list(state([entity(First_agent, Direction) | Entities], [agent_move_queue(entity(First_agent, Direction), [Path]) | Move_queue], Other_agents, Other_waiting_list, Explored_nodes), Updated_State).
+    find_path(go(p(N, N)), [], [], Path),
+    format('Go Path : ~w~n', [Path]),
+    queue_waiting_list(state([entity(Agent, Direction) | Entities], [agent_move_queue(entity(Agent, Direction), [Path]) | Move_queue], Agents, Waiting_list_left, Explored_nodes), Updated_State).
 
 
 % translate go for one html tick then execute, update availavle agent if eligable 
@@ -137,7 +136,28 @@ exit([], _, _, Exit_queue) :-
     exit([], _, _, Updated_exit_queue).
 exit([Agent|Agents], Exit, Max_energy, Exit_queue) :-
     get_agent_position(Agent, Position),
-    heuristic(Position, go(Position), H),
-    solve_task_as(go(Position), go(Position), Max_energy, Max_energy, [state([Position], H)], [], [], [move_queue(_, Reversed_path)]),
+    ailp_grid_size(N),
+    find_path(go(p(N, N)), [], [], Path),
     reverse(Reversed_path, [_| Path]),
     exit(Agents, Exit, Max_energy, [agent_move_queue(entity(Agent, exit), [Path])|Exit_queue]).
+
+
+
+
+find_path(Task, Path_queue, Visited_node, Move_queue) :-
+    Path_queue = [Current_path | Paths_left],
+    Current_path = [Current_position|_],
+    (achieved(Task, Current_position)
+    ->  reverse(Current_path, [_|Move_queue])
+    ;   (findall(New_path, (
+            New_path = [New_position|Current_path],
+            (map_adjacent(Current_position, New_position, empty); map_adjacent(Current_position, New_position, a(_))),
+            \+ member(New_position, Visited_node),
+            \+ member(state([New_position|_], _), Path_queue)
+                ), Updated_path) 
+            ->  (append(Updated_path, Paths_left, Updated_path_queue),
+                find_path(Task, Updated_path_queue, [Current_position|Visited_node], Move_queue))
+            ;   find_path(Task, Paths_left, [Current_position|Visited_node], Move_queue)
+            )
+    ).
+
