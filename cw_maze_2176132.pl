@@ -114,13 +114,17 @@ queue_waiting_list(State, Updated_State) :-
     format('4'),
     Max_energy is N * N,
     format('5'),
-    solve_task_as(go(Destination), go(Destination), Max_energy, Max_energy, [state([Agent_position], 0)], [], [], [move_queue(_, Reversed_path)]),
-    format('6'),
+    (   solve_task_as(go(Destination), go(Destination), Max_energy, Max_energy, [state([Agent_position], 0)], [], [], [move_queue(_, Reversed_path)])
+    ->  reverse(Reversed_path, [_ | Path]),
+        format('Go Path : ~w~n', [Path]),
+        queue_waiting_list(state([entity(Agent, Direction) | Entities], [agent_move_queue(entity(Agent, Direction), Path) | Move_queue], Agents, Waiting_list_left, Explored_nodes), Updated_State)
+    ;   append(Agents, [Agent], Rearranged_agents),
+        queue_waiting_list(state(Entities, Move_queue, Rearranged_agents, Waiting_list, Explored_nodes), Updated_State)
+    ).
+
     %Reversed_path = [P1, P2 |_],
     %direction(P1, Move_direction, P2),
-    reverse(Reversed_path, [_ | Path]),
-    format('Go Path : ~w~n', [Path]),
-    queue_waiting_list(state([entity(Agent, Direction) | Entities], [agent_move_queue(entity(Agent, Direction), Path) | Move_queue], Agents, Waiting_list_left, Explored_nodes), Updated_State).
+    
 
 
 % translate go for one html tick then execute, update availavle agent if eligable 
