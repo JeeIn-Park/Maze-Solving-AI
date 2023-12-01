@@ -16,7 +16,7 @@ opposite_direction(west, east).
 
 % initial call
 solve_maze :-
-    format('------------------solve maze------------------- ~n'),
+    format('------------------solve maze ~n'),
     my_agents(My_agents),
     format('my_agents : ~w~n', [My_agents]),
     initialise_entities(My_agents, [], [], Agents, Entities),
@@ -48,8 +48,11 @@ initialise_entities([Agent|Agents], Temp_agents, Temp_entities, Updated_agents, 
 % main loop
 evolve_state(State, New_state) :-
     %State = state(Entities, Move_queue, Available_agents, Waiting_list, Explored_nodes),
+    format('Main check 0 : ~w~n', [State]),
     next_move(State, State_1, []),
+    format('Main check 1 : ~w~n', [State_1]),
     queue_waiting_list(State_1, State_2),
+    format('Main check 2 : ~w~n', [State_2]),
     State_2 = state(Entities_2, Move_queue_2, Available_agents_2, Waiting_list_2, Explored_nodes_2),
     format('Move_queue before execute : ~w~n', [Move_queue_2]),
     execute_queue(Move_queue_2, [], [], [], Move_queue_3),
@@ -62,8 +65,9 @@ next_move( state([], Move_queue, Available_agents, Waiting_list, Explored_nodes)
     Updated_State = state(Temp_entities, Move_queue, Available_agents, Waiting_list, Explored_nodes), !.
 % recursive call updating entities
 next_move(State, Updated_State, Temp_entities) :-
-    format('------------------next_move------------------- ~n'),
+    format('------------------next_move ~n'),
     State = state(Entities, Move_queue, Available_agents, Waiting_list, Explored_nodes), 
+    format('State >>> Etities : ~w~n Move_queue : ~w~n Available_agents : ~w~n Waiting_list : ~w~n Explored_nodes : ~w~n', [Entities, Move_queue, Available_agents, Waiting_list, Explored_nodes]),
     Entities = [entity(ID, Going)|Other_entities],
     get_agent_position(ID, Current_position),
     
@@ -72,11 +76,15 @@ next_move(State, Updated_State, Temp_entities) :-
     ;   findall(path(New_position, Direction), 
             (agent_adjacent(ID, New_position, empty), 
             direction(Current_position, Direction, New_position),
+            \+ member(agent_move_queue(entity(ID,_),_), Move_queue),
             \+ member(path(New_position, _), Explored_nodes),
             \+ opposite_direction(Going, Direction)
             ), New_paths),
         (   New_paths = []
-        ->  next_move(state(Other_entities, Move_queue, [ID|Available_agents], Waiting_list, Explored_nodes), Updated_State, Temp_entities) 
+        ->  (   member(agent_move_queue(entity(ID,Move_direction),_), Move_queue)
+            ->  next_move(state(Other_entities, Move_queue, Available_agents, Waiting_list, Explored_nodes), Updated_State, [entity(ID, Move_direction)|Temp_entities])
+            ;   next_move(state(Other_entities, Move_queue, [ID|Available_agents], Waiting_list, Explored_nodes), Updated_State, Temp_entities)
+            ) 
         ;   (   New_paths = [path(Path_position, Path_direction)]
             ->  next_move(state(Other_entities, [agent_move_queue(entity(ID, Path_direction), [Path_position])|Move_queue], Available_agents, Waiting_list, Explored_nodes), Updated_State, [entity(ID, Path_direction)|Temp_entities]) 
             ;   New_paths = [path(Path_position, Path_direction)| Other_paths],
@@ -93,32 +101,46 @@ queue_waiting_list(State, State) :-
     State = state(_, _, _, [], _);
     State = state(_, _, [], _, _).
 queue_waiting_list(State, Updated_State) :-
-    format('------------------queue_waiting_list------------------- ~n'),
+    format('------------------queue_waiting_list ~n'),
     State = state(Entities, Move_queue, Available_agents, Waiting_list, Explored_nodes),
     format('State >>> Etities : ~w~n Move_queue : ~w~n Available_agents : ~w~n Waiting_list : ~w~n Explored_nodes : ~w~n', [Entities, Move_queue, Available_agents, Waiting_list, Explored_nodes]),
     Available_agents = [Agent | Agents],
-    Waiting_list = [path(Position, Direction) | Waiting_list_left],
+    format('1'),
+    get_agent_position(Agent, Agent_position),
+    format('2'),
+    Waiting_list = [path(Destination, Direction) | Waiting_list_left],
+    format('3'),
     ailp_grid_size(N),
-    find_path(go(p(N, N)), [], [], Path),
+    format('4'),
+    Max_energy is N * N,
+    format('5'),
+    solve_task_as(go(Destination), go(Destination), Max_energy, Max_energy, [state([Agent_position], 0)], [], [], [move_queue(_, Reversed_path)]),
+    format('6'),
+    %Reversed_path = [P1, P2 |_],
+    %direction(P1, Move_direction, P2),
+    reverse(Reversed_path, [_ | Path]),
     format('Go Path : ~w~n', [Path]),
-    queue_waiting_list(state([entity(Agent, Direction) | Entities], [agent_move_queue(entity(Agent, Direction), [Path]) | Move_queue], Agents, Waiting_list_left, Explored_nodes), Updated_State).
+    queue_waiting_list(state([entity(Agent, Direction) | Entities], [agent_move_queue(entity(Agent, Direction), Path) | Move_queue], Agents, Waiting_list_left, Explored_nodes), Updated_State).
 
 
 % translate go for one html tick then execute, update availavle agent if eligable 
 execute_queue([], Agent_list, Move_list, Move_queue, Move_queue) :-
+    format('move... [Agent] : ~w  [Position] : ~w ~n', [Agent_list, Move_list]),
     agents_do_moves(Agent_list, Move_list).
 execute_queue(Move_queue, Agent_list, Move_list, Temp_move_queue, Updated_move_queue) :-
-        format('------------------execute_queue------------------- ~n'),
+        format('------------------execute_queue ~n'),
     Move_queue = [agent_move_queue(entity(ID, Direction), [Next_position|Path]) | Move_queue_left],
     (   Path = []
     ->  (   Direction = exit
         ->   leave_maze(ID)
         ;   (   lookup_pos(Next_position, empty)
-            ->  execute_queue(Move_queue_left, [ID|Agent_list], [Next_position|Move_list], Temp_move_queue, Updated_move_queue)
-            ;   execute_queue(Move_queue_left, Agent_list, Move_list, [agent_move_queue(entity(ID, Direction), [Next_position|Path])|Temp_move_queue], Updated_move_queue)
+            ->  format('move available ~n'), % add left queue to temp move queue, 
+                execute_queue(Move_queue_left, [ID|Agent_list], [Next_position|Move_list], Temp_move_queue, Updated_move_queue)
+            ;   format('move not available, wait ~n'),
+                execute_queue(Move_queue_left, Agent_list, Move_list, [agent_move_queue(entity(ID, Direction), [Next_position|Path])|Temp_move_queue], Updated_move_queue)
             )
         )
-    ;   execute_queue(Move_queue_left, [ID|Agent_list], [Next_position|Move_list], [agent_move_queue(entity(ID, Direction), [Path])|Temp_move_queue], Updated_move_queue)
+    ;   execute_queue(Move_queue_left, [ID|Agent_list], [Next_position|Move_list], [agent_move_queue(entity(ID, Direction), Path)|Temp_move_queue], Updated_move_queue)
     ).
 
 
@@ -135,29 +157,7 @@ exit([], _, _, Exit_queue) :-
     execute_queue(Exit_queue, [], [], Updated_exit_queue),
     exit([], _, _, Updated_exit_queue).
 exit([Agent|Agents], Exit, Max_energy, Exit_queue) :-
-    get_agent_position(Agent, Position),
-    ailp_grid_size(N),
-    find_path(go(p(N, N)), [], [], Path),
+    get_agent_position(Agent, Agent_position),
+    solve_task_as(go(Exit), go(Exit), Max_energy, Max_energy, [state([Agent_position], 0)], [], [], [move_queue(_, Reversed_path)]),
     reverse(Reversed_path, [_| Path]),
-    exit(Agents, Exit, Max_energy, [agent_move_queue(entity(Agent, exit), [Path])|Exit_queue]).
-
-
-
-
-find_path(Task, Path_queue, Visited_node, Move_queue) :-
-    Path_queue = [Current_path | Paths_left],
-    Current_path = [Current_position|_],
-    (achieved(Task, Current_position)
-    ->  reverse(Current_path, [_|Move_queue])
-    ;   (findall(New_path, (
-            New_path = [New_position|Current_path],
-            (map_adjacent(Current_position, New_position, empty); map_adjacent(Current_position, New_position, a(_))),
-            \+ member(New_position, Visited_node),
-            \+ member(state([New_position|_], _), Path_queue)
-                ), Updated_path) 
-            ->  (append(Updated_path, Paths_left, Updated_path_queue),
-                find_path(Task, Updated_path_queue, [Current_position|Visited_node], Move_queue))
-            ;   find_path(Task, Paths_left, [Current_position|Visited_node], Move_queue)
-            )
-    ).
-
+    exit(Agents, Exit, Max_energy, [agent_move_queue(entity(Agent, exit), Path)|Exit_queue]).
