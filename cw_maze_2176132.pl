@@ -56,7 +56,7 @@ evolve_state(State, New_state) :-
     format('Main check 2 : ~w~n', [State_2]),
     State_2 = state(Entities_2, Move_queue_2, Available_agents_2, Waiting_list_2, Explored_nodes_2),
     format('Move_queue before execute : ~w~n', [Move_queue_2]),
-    execute_queue(Move_queue_2, [], [], [], Move_queue_3),
+    execute_queue(Entities_2, Move_queue_2, Move_queue_2, [], [], [], [], Entities_3, Move_queue_3),
     format('Move_queue after execute  : ~w~n', [Move_queue_3]),
     evolve_state(state(Entities_2, Move_queue_3, Available_agents_2, Waiting_list_2, Explored_nodes_2),New_state).
 
@@ -135,27 +135,33 @@ queue_waiting_list(Free_agents, State, Updated_State) :-
     %direction(P1, Move_direction, P2),
     
 
-
+%execute_queue(Entities_2, Move_queue_2, [], [], [], [], Entities_3, Move_queue_3),
 % translate go for one html tick then execute, update availavle agent if eligable 
-execute_queue([], Agent_list, Move_list, Move_queue, Move_queue) :-
+execute_queue(_, _, [], Agent_list, Move_list, Entities, Move_queue, Entities, Move_queue) :-
     format('move... [Agent] : ~w  [Position] : ~w ~n', [Agent_list, Move_list]),
     agents_do_moves(Agent_list, Move_list).
-execute_queue(Move_queue, Agent_list, Move_list, Temp_move_queue, Updated_move_queue) :-
-        format('------------------execute_queue ~n'),
+execute_queue(Entities_const, Move_queue_const, Move_queue, Agent_list, Move_list, Temp_entities, Temp_move_queue, Updated_entities, Updated_move_queue) :-
+    format('------------------execute_queue ~n'),
     Move_queue = [agent_move_queue(entity(ID, Direction), [Next_position|Path]) | Move_queue_left],
-    (   Path = []
-    ->  (   Direction = exit
-        ->   leave_maze(ID)
-        ;   (   lookup_pos(Next_position, c(ID2))
-            ->  format('move swaped ~n'),
-                member(agent_move_queue(entity(ID2, Direction2), [Next_position2|Path2]), Move_queue_left),
-                select(agent_move_queue(entity(ID2, Direction2), [Next_position2|Path2]), Move_queue_left, Swaped_move_queue),
-                execute_queue(Swaped_move_queue, Agent_list, Move_list, [agent_move_queue(entity(ID, Direction2), Path2), agent_move_queue(entity(ID2, Direction), Path)|Temp_move_queue], Updated_move_queue)
-            ;   format('move available ~n'), % add left queue to temp move queue, 
-                execute_queue(Move_queue_left, [ID|Agent_list], [Next_position|Move_list], Temp_move_queue, Updated_move_queue)
+    get_agent_position(ID, Current_position), direction(Current_position, New_direction, Next_position),
+    (   member(Next_position, Move_list)
+    ->  execute_queue(Entities_const, Move_queue_const, Move_queue_left, Agent_list, Move_list, [entity(ID, Direction)|Temp_entities], [agent_move_queue(entity(ID, Direction), [Next_position|Path])|Temp_move_queue], Updated_entities, Updated_move_queue)
+    ;   (   lookup_pos(Next_position, empty)
+        ->  (   Path = []
+            ->  (   Direction = exit
+                ->  agent_do_moves(ID, [Next_position]), leave_maze(ID)
+                ;   execute_queue(Entities_const, Move_queue_const, Move_queue_left, [ID|Agent_list], [Next_position|Move_list], [entity(ID, New_direction)|Temp_entities], Temp_move_queue, Updated_entities, Updated_move_queue)
+                )
+            ;   execute_queue(Entities_const, Move_queue_const, Move_queue_left, [ID|Agent_list], [Next_position|Move_list], [entity(ID, New_direction)|Temp_entities], [agent_move_queue(entity(ID, Direction), Path)|Temp_move_queue], Updated_entities, Updated_move_queue)
+            )
+        ;   lookup_pos(Next_position, a(ID2)), member(agent_move_queue(entity(ID2, _), [Next_position2|Path2]) , Move_queue_const), get_agent_position(ID2, Current_position2), direction(Current_position2, New_direction2, Next_position2),
+            (   opposite_direction(New_direction, New_direction2)
+            ->  select(agent_move_queue(entity(ID2, _), _), Move_queue_left, Swaped_move_queue),
+                member(entity(ID2, Direction2), Entities_const),
+                execute_queue(Entities_const, Move_queue_const, Swaped_move_queue, Agent_list, Move_list, [entity(ID, Direction2), entity(ID2, Direction)|Temp_entities], [agent_move_queue(entity(ID, Direction2), Path2), agent_move_queue(entity(ID2, Direction), Path)|Temp_move_queue], Updated_entities, Updated_move_queue)
+            ;   execute_queue(Entities_const, Move_queue_const, Move_queue_left, Agent_list, Move_list, [entity(ID, Direction)|Temp_entities], [agent_move_queue(entity(ID, Direction), [Next_position|Path])|Temp_move_queue], Updated_entities, Updated_move_queue)
             )
         )
-    ;   execute_queue(Move_queue_left, [ID|Agent_list], [Next_position|Move_list], [agent_move_queue(entity(ID, Direction), Path)|Temp_move_queue], Updated_move_queue)
     ).
 
 
