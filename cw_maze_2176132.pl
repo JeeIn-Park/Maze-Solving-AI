@@ -58,7 +58,7 @@ evolve_state(State, New_state) :-
     format('Move_queue before execute : ~w~n', [Move_queue_2]),
     execute_queue(Entities_2, Move_queue_2, Move_queue_2, [], [], [], [], Entities_3, Move_queue_3),
     format('Move_queue after execute  : ~w~n', [Move_queue_3]),
-    evolve_state(state(Entities_2, Move_queue_3, Available_agents_2, Waiting_list_2, Explored_nodes_2),New_state).
+    evolve_state(state(Entities_3, Move_queue_3, Available_agents_2, Waiting_list_2, Explored_nodes_2),New_state).
 
 
 % recursive call updating entities
@@ -149,7 +149,7 @@ execute_queue(Entities_const, Move_queue_const, Move_queue, Agent_list, Move_lis
     ;   (   lookup_pos(Next_position, empty)
         ->  (   Path = []
             ->  (   Direction = exit
-                ->  agent_do_moves(ID, [Next_position]), leave_maze(ID)
+                ->  format('found!!'), agent_do_moves(ID, [Next_position]), format('bye bye'), leave_maze(ID)
                 ;   execute_queue(Entities_const, Move_queue_const, Move_queue_left, [ID|Agent_list], [Next_position|Move_list], [entity(ID, New_direction)|Temp_entities], Temp_move_queue, Updated_entities, Updated_move_queue)
                 )
             ;   execute_queue(Entities_const, Move_queue_const, Move_queue_left, [ID|Agent_list], [Next_position|Move_list], [entity(ID, New_direction)|Temp_entities], [agent_move_queue(entity(ID, Direction), Path)|Temp_move_queue], Updated_entities, Updated_move_queue)
