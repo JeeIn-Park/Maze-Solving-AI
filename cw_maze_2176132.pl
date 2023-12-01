@@ -51,7 +51,8 @@ evolve_state(State, New_state) :-
     format('Main check 0 : ~w~n', [State]),
     next_move(State, State_1, []),
     format('Main check 1 : ~w~n', [State_1]),
-    queue_waiting_list(State_1, State_2),
+    State_1 = state(_, _, Available_agents_1, _, _),
+    queue_waiting_list(Available_agents_1, State_1, State_2),
     format('Main check 2 : ~w~n', [State_2]),
     State_2 = state(Entities_2, Move_queue_2, Available_agents_2, Waiting_list_2, Explored_nodes_2),
     format('Move_queue before execute : ~w~n', [Move_queue_2]),
@@ -97,14 +98,22 @@ next_move(State, Updated_State, Temp_entities) :-
 
 % queue_waiting_list(State_1, State_2),
 % if there is any available agents and if there is any nodes in waiting list, start exploring that node
-queue_waiting_list(State, State) :-
-    State = state(_, _, _, [], _);
-    State = state(_, _, [], _, _).
-queue_waiting_list(State, Updated_State) :-
+queue_waiting_list([], State, State) :- 
+    format('Looked all available agents ~n').
+queue_waiting_list(_, State, State) :-
+    (State = state(_, _, _, [], _), 
+    State = state(Entities, Move_queue, Available_agents, Waiting_list, Explored_nodes),
+    format('No more waiting list ~n'),
+    format('State >>> Etities : ~w~n Move_queue : ~w~n Available_agents : ~w~n Waiting_list : ~w~n Explored_nodes : ~w~n', [Entities, Move_queue, Available_agents, Waiting_list, Explored_nodes]));
+    (State = state(_, _, [], _, _),
+    State = state(Entities, Move_queue, Available_agents, Waiting_list, Explored_nodes),
+    format('no more available agent ~n'),
+    format('State >>> Etities : ~w~n Move_queue : ~w~n Available_agents : ~w~n Waiting_list : ~w~n Explored_nodes : ~w~n', [Entities, Move_queue, Available_agents, Waiting_list, Explored_nodes])).
+queue_waiting_list(Free_agents, State, Updated_State) :-
     format('------------------queue_waiting_list ~n'),
     State = state(Entities, Move_queue, Available_agents, Waiting_list, Explored_nodes),
     format('State >>> Etities : ~w~n Move_queue : ~w~n Available_agents : ~w~n Waiting_list : ~w~n Explored_nodes : ~w~n', [Entities, Move_queue, Available_agents, Waiting_list, Explored_nodes]),
-    Available_agents = [Agent | Agents],
+    Free_agents = [Agent | Agents],
     format('1'),
     get_agent_position(Agent, Agent_position),
     format('2'),
@@ -117,9 +126,9 @@ queue_waiting_list(State, Updated_State) :-
     (   solve_task_as(go(Destination), go(Destination), Max_energy, Max_energy, [state([Agent_position], 0)], [], [], [move_queue(_, Reversed_path)])
     ->  reverse(Reversed_path, [_ | Path]),
         format('Go Path : ~w~n', [Path]),
-        queue_waiting_list(state([entity(Agent, Direction) | Entities], [agent_move_queue(entity(Agent, Direction), Path) | Move_queue], Agents, Waiting_list_left, Explored_nodes), Updated_State)
-    ;   append(Agents, [Agent], Rearranged_agents),
-        queue_waiting_list(state(Entities, Move_queue, Rearranged_agents, Waiting_list, Explored_nodes), Updated_State)
+        select(Agent, Available_agents, Updated_agents),
+        queue_waiting_list(Agents, state([entity(Agent, Direction) | Entities], [agent_move_queue(entity(Agent, Direction), Path) | Move_queue], Updated_agents, Waiting_list_left, Explored_nodes), Updated_State)
+    ;   queue_waiting_list(Agents, State, Updated_State)
     ).
 
     %Reversed_path = [P1, P2 |_],
