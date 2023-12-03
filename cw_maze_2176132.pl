@@ -49,13 +49,17 @@ initialise_entities([Agent|Agents], Temp_agents, Temp_entities, Updated_agents, 
 evolve_state(State, New_state) :-
     %State = state(Entities, Move_queue, Available_agents, Waiting_list, Explored_nodes),
     format('Main check 0 : ~w~n', [State]),
+
     next_move(State, State_1, []),
     format('Main check 1 : ~w~n', [State_1]),
+
     State_1 = state(_, _, Available_agents_1, _, _),
     queue_waiting_list(Available_agents_1, State_1, State_2),
     format('Main check 2 : ~w~n', [State_2]),
+
     State_2 = state(_, Move_queue_2, Available_agents_2, Waiting_list_2, Explored_nodes_2),
     format('Move_queue before execute : ~w~n', [Move_queue_2]),
+    
     execute_queue(Move_queue_2, State_2, [], [], state([], [], Available_agents_2, Waiting_list_2, Explored_nodes_2), State_3),
     %format('Move_queue after execute  : ~w~n', [Move_queue_3]),
     evolve_state(State_3, New_state).
@@ -100,11 +104,9 @@ next_move(State, Updated_State, Temp_entities) :-
 % if there is any available agents and if there is any nodes in waiting list, start exploring that node
 queue_waiting_list([], State, State) :- 
     format('Looked all available agents ~n').
-queue_waiting_list(_, State, Updated_State) :-
-    (State = state(_, _, _, [], _), 
-    format('No more waiting list ~n'), Updated_State = State);
-    (State = state(_, _, [], _, _),
-    format('no more available agent ~n'), Updated_State = State).
+queue_waiting_list(_, State, State) :-
+    (State = state(_, _, _, [], _), !);
+    (State = state(_, _, [], _, _), !).
 queue_waiting_list(Free_agents, State, Updated_State) :-
     format('------------------queue_waiting_list ~n'),
     State = state(Entities, Move_queue, Available_agents, Waiting_list, Explored_nodes),
@@ -139,16 +141,17 @@ execute_queue([], _, Agent_list, Move_list, State, State) :-
 execute_queue(Move_queue, Const, Agent_list, Move_list, Temp_state, Updated_State) :-
     format('------------------execute_queue ~n'),
     Move_queue = [agent_move_queue(entity(ID, Direction), [Next_position|Path]) | Move_queue_left],
+    format('Move_queue : ~w~n', [Move_queue]),
     Const = state(Entities_const, Move_queue_const, _, _, _), % can be optimised using shorter form
     Temp_state = state(Temp_entities, Temp_move_queue, Temp_agents, Waiting_list, Explored_nodes),
     get_agent_position(ID, Current_position), direction(Current_position, New_direction, Next_position),
     (   member(Next_position, Move_list)
-    ->  execute_queue(Move_queue_left, Const, Agent_list, Move_list, state(entity(ID, Direction)|Temp_entities, agent_move_queue(entity(ID, Direction), [Next_position|Path])|Temp_move_queue, Temp_agents, Waiting_list, Explored_nodes), Updated_State)
+    ->  execute_queue(Move_queue_left, Const, Agent_list, Move_list, state([entity(ID, Direction)|Temp_entities], [agent_move_queue(entity(ID, Direction), [Next_position|Path])|Temp_move_queue], Temp_agents, Waiting_list, Explored_nodes), Updated_State)
     ;   (   lookup_pos(Next_position, empty)
         ->  (   Path = []
             ->  (   Direction = exit
                 ->  format('found!!'), agent_do_moves(ID, [Next_position]), format('bye bye'), leave_maze(ID)
-                ;   execute_queue(Move_queue_left, Const, [ID|Agent_list], [Next_position|Move_list], state(entity(ID, New_direction)|Temp_entities, Temp_move_queue, Temp_agents, Waiting_list, Explored_nodes), Updated_State)
+                ;   execute_queue(Move_queue_left, Const, [ID|Agent_list], [Next_position|Move_list], state([entity(ID, New_direction)|Temp_entities], Temp_move_queue, Temp_agents, Waiting_list, Explored_nodes), Updated_State)
                 )
             ;   execute_queue(Move_queue_left, Const, [ID|Agent_list], [Next_position|Move_list], state([entity(ID, New_direction)|Temp_entities], [agent_move_queue(entity(ID, Direction), Path)|Temp_move_queue], Temp_agents, Waiting_list, Explored_nodes), Updated_State)
             )
