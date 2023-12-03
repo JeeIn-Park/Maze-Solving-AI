@@ -78,8 +78,13 @@ next_move(Entity, Move_queue, Available_agents, Waiting_list, Updated_move_queue
     
     
     
-    
+ State = state(Entities, Move_queue, Available_agents, Waiting_list, Explored_nodes),
+      
 State, Temp_State, Updated_State
+
+
+
+execute_queue(Move_queue, Const, Agent_list, Move_list, Temp_state, Updated_State)
 
 
 

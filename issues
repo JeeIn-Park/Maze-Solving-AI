@@ -39,3 +39,28 @@ implement path finding algorithm
 
 
 Updated_State -> Updated_state
+
+
+
+
+sort available list with heuristic value,
+
+
+
+
+
+bfs -> once it found waiting list, do it
+
+
+while it's moving... bumpded into node in waiting list, explore it first
+
+
+
+
+
+
+
+delete waiting list only when someone arrive,
+until someone arrive there, compare the distance among available agent and allocate nearest one.
+need to update move queue(also, delelte the original one) and avaiable agent, entity as well
+

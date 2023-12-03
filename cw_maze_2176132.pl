@@ -100,6 +100,24 @@ next_move(State, Updated_State, Temp_entities) :-
         )
     ).
 
+
+search_nearest_node(Queue, Visited, Path, Waiting_list) :-
+    Queue = [Next|Rest],
+    Next = [Pos|RPath],
+    ( member(path(Pos, _), Waiting_list) -> Path = Next
+    ; 
+        (   findall([NP,Pos|RPath],
+                    (   (   map_adjacent(Pos,NP,empty) ;
+                            map_adjacent(Pos, NP, a(_))),
+                        \+ member(NP, Visited), 
+                        \+ member([NP|_],Rest)),
+                    Newfound),
+            append(Rest,Newfound,NewQueue),
+            search_nearest_node(NewQueue,[Pos|Visited],Path, Waiting_list)
+        )
+    ).
+
+
 % queue_waiting_list(State_1, State_2),
 % if there is any available agents and if there is any nodes in waiting list, start exploring that node
 queue_waiting_list([], State, State) :- 
@@ -112,20 +130,14 @@ queue_waiting_list(Free_agents, State, Updated_State) :-
     State = state(Entities, Move_queue, Available_agents, Waiting_list, Explored_nodes),
     format('State >>> Etities : ~w~n Move_queue : ~w~n Available_agents : ~w~n Waiting_list : ~w~n Explored_nodes : ~w~n', [Entities, Move_queue, Available_agents, Waiting_list, Explored_nodes]),
     Free_agents = [Agent | Agents],
-    format('1'),
     get_agent_position(Agent, Agent_position),
-    format('2'),
-    Waiting_list = [path(Destination, Direction) | Waiting_list_left],
-    format('3'),
-    ailp_grid_size(N),
-    format('4'),
-    Max_energy is N * N,
-    format('5'),
-    (   solve_task_as(go(Destination), go(Destination), Max_energy, Max_energy, [state([Agent_position], 0)], [], [], [move_queue(_, Reversed_path)])
-    ->  reverse(Reversed_path, [_ | Path]),
+    (   search_nearest_node([[Agent_position]], [], Reversed_path, Waiting_list)  
+    ->  Reversed_path = [Destination|_],
+        reverse(Reversed_path,[_|Path]),
         format('Go Path : ~w~n', [Path]),
         select(Agent, Available_agents, Updated_agents),
-        queue_waiting_list(Agents, state([entity(Agent, Direction) | Entities], [agent_move_queue(entity(Agent, Direction), Path) | Move_queue], Updated_agents, Waiting_list_left, Explored_nodes), Updated_State)
+        select(path(Destination, Direction), Waiting_list, Updated_waiting_list),
+        queue_waiting_list(Agents, state([entity(Agent, Direction) | Entities], [agent_move_queue(entity(Agent, Direction), Path) | Move_queue], Updated_agents, Updated_waiting_list, Explored_nodes), Updated_State)
     ;   queue_waiting_list(Agents, State, Updated_State)
     ).
 
