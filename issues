@@ -1,0 +1,41 @@
+find go path!
+need to use outer most agent first
+don't need energy
+
+
+compare last two elements and define entity's last direction
+
+use last found waiting list first
+
+among availale agent, use agent which doesn't have any agent on the path to the destination
+
+
+how to deal with blocked agent....
+
+queue waiting list doesn't return available agents correctly
+
+
+how to deal with agents bump into each other... 
+swap move path?
+
+
+error when ends -> stop searching, false
+
+if it defines direction when it moves, I don't think I need to change direction in next move finder
+
+if there is any empty node it can go,,, it goes there first rather than waiting to check earliest one. or go for the nearest one first
+
+
+include path has agent on the way
+(I have method to avoid crash when they bump into each other)
+
+use closest agent for unexplored node
+for each free agent, use find (for nodes in waiting list)
+
+implement path finding algorithm
+-> don't need energy
+-> need to use waiting list
+
+
+
+Updated_State -> Updated_state

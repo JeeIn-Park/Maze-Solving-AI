@@ -1,0 +1,16 @@
+solve_task_bfs(Task,[P|Ps],Path) :-
+    achieved(Task,P), reverse([P|Ps],Path)
+    ;
+    map_adjacent(P,Q,empty), \+ member(Q,Ps),
+    solve_task_bfs(Task,[Q,P|Ps],Path).
+
+
+solve_task_bfs(Queue,Visited,Path) :-
+    Queue = [Next|Rest],
+    Next = [Pos|RPath],
+    (complete(Pos) -> reverse([Pos|RPath],[_|Path])
+    ;otherwise     -> (findall([NP,Pos|RPath],
+                               (map_adjacent(Pos,NP,empty),\+ member(NP,Visited), \+ member([NP|_],Rest)),
+                               Newfound),
+                      append(Rest,Newfound,NewQueue),
+                      solve_task_bfs(NewQueue,[Pos|Visited],Path))).

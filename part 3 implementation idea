@@ -1,0 +1,85 @@
+state(Move_queue, Available_agents, Waiting_list, Exploered_node)
+Move_queue = [agent_move_queue(entity, [Path])]
+path(start, direction)
+entity(ID, direction)
+
+Move_queue calculator
+% the direction of move needs to be kept in track.
+% needs to move on same direction, or turn left or right, so it doesn't go back again and again.
+
+Available_agents calculator
+% when an agent arrives at the dead ends (there is no more empty cells to be traveled, it will have only one adjacent cell) it's added to available agents.
+% initially all agents aside from the first agent.
+
+Waiting_list calculator
+% check the adjacent cells and add it to waiting list (when there is more than one), otherwise, the current agent just continues exploring.
+% this check needs to be done for each agents on the grid
+
+Explored_node calculator
+% when it has more than two adjacent empty cells, it's considered as node. 
+% it adds adjacent cells to waiting lists when it hasn't been explored.
+% after add adjacent cells to the waiting list, add the node to explored_node.
+
+
+
+agent(ID, direction)
+
+initial 
+main loop
+
+
+
+move maker
+
+% Agents_next move
+% from current move queue, calculate next move for all agent and execute it
+% after it execute the move, calculate the next state on the main loop
+[agent_move_queue(ID, [Path])]
+agents_next_move(Move_queue) :- 
+    for each agent_move_queue, find the next movement it should make. 
+    needs to be called each time when the waiting list && available agent updated 
+when it finish the move allocated, it should be free and added to the available agent
+
+
+
+achieved
+when it arrived the exit, the agent reached there needs to exit.
+then delete all the current move_queue.
+get queue for each agent to go exit and queue the final paths
+
+
+
+
+
+
+
+
+next_move(Entity, Move_queue, Available_agents, Waiting_list, Updated_move_queue, Updated_available_agents, Updated_waiting_list) :-
+    get_agent_position(Entity(ID, Going), Current_position),
+    findall(path(New_position, Direction), 
+        (agent_adjacent(ID, New_position, empty), 
+        direction(Current_position, Direction, New_position),
+        \+ back(Going,Direction)),
+        New_paths),
+    (  New_paths = [path(Queue_position, _)]
+    ->  Updated_move_queue = [agent_move_queue(Entity, [Queue_position])|Move_queue],
+        Updated_available_agents = Available_agents,
+        Updated_waiting_list = Waiting_list
+    ;   (   New_paths = []
+        ->  Updated_move_queue = Move_queue,
+            Updated_available_agents = [ID|Available_agents],
+            Updated_waiting_list = Waiting_list
+        ;   Updated_move_queue = Move_queue, % needs to update move_queue
+            Updated_available_agents = Available_agents,
+            append(New_paths, Waiting_list, Updated_waiting_list)
+        )
+    ).
+    
+    
+    
+    
+    
+State, Temp_State, Updated_State
+
+
+
