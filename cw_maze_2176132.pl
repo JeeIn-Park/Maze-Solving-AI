@@ -165,7 +165,7 @@ execute_queue(Move_queue, Const, Agent_list, Move_list, Temp_state, Updated_Stat
                 ;   execute_queue(Move_queue_left, Const, Agent_list, Move_list, state([entity(ID, Direction)|Temp_entities], [agent_move_queue(entity(ID, Direction), [Next_position|Path])|Temp_move_queue], Temp_agents, Waiting_list, Explored_nodes), Updated_State)
                 )
             ;   select(ID2, Temp_agents, Updated_agents),
-                execute_queue(Move_queue_left, Const, Agent_list, Move_list, state([entity(ID2, New_direction)|Temp_entities], [agent_move_queue(entity(ID2, New_direction), Path)|Temp_move_queue], Updated_agents, Waiting_list, Explored_nodes), Updated_State)
+                execute_queue(Move_queue_left, Const, Agent_list, Move_list, state([entity(ID2, New_direction)|Temp_entities], [agent_move_queue(entity(ID2, New_direction), Path)|Temp_move_queue], [ID|Updated_agents], Waiting_list, Explored_nodes), Updated_State)
             )
         )
     ).
