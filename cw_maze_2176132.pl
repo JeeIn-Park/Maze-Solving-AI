@@ -1,17 +1,3 @@
-% State: Saves Path, Backtrack, Move info
-% 1. solve_maze: initialize agent state
-% 2. solve_maze(_,_) : find_moves -> returns NewState / Moves / New DivergenceMap
-%  -> executes moves/ (Recursive)
-% 3. find_moves(recursive) -> find_moves_dfs -> returns NewState
-% 4. find_moves_dfs -> select_move
-% 5. select_move -> a. Backtrack : follow the move (moves = 0)
-%                -> b. multiple moves: pick one (moves >= 2)
-%                -> c. finished Backtrack : update DivergenceMap, follow the path that didnt take
-
-% Path stores only the right route (keeps elimnating dead ends)
-% Backtrack is a path storing from backtracking position to the original divergence
-% Divergences stores right divergences that the agent encounters
-
 :- dynamic agent_state/3. % agent_state(Agent, Path, Backtrack)
 :- dynamic divergence_map/2. % divergence_map(Location, RightPath)
 :- dynamic dead_moves/1.
@@ -94,42 +80,53 @@ find_moves([Agent|Rest],[Move|Moves]) :-
 find_moves_dfs(Agent,Path,Divergences,FinalMove) :-
     get_agent_position(Agent,Pos),
     findall(Next, ((map_adjacent(Pos,Next,empty);map_adjacent(Pos,Next,a(_))), \+ member(Next,Path), \+ is_dead_move(Next)), PosMoves), % \+ agent occupying
-    findall(P, (member(P,PosMoves), agent_adjacent(Agent,P,empty)),ActualMoves),
-    format("Before call::: Agent: ~w, In:~w, PosMoves:~w ActualMoves:~w\n",[Agent,Pos,PosMoves,ActualMoves]),
-    format("Agent in : ~w, PosMoves: ~w, Divergence: ~w\n",[Pos,PosMoves,Divergences]),
-    (length(ActualMoves,0), \+ length(PosMoves,0)   -> FinalMove=Pos % A bit faulty when somebody tries to backtrack and somebody tries to go
-    ;otherwise                                      -> choose_move(Agent,Pos,PosMoves,Path,Divergences,Move),
+    findall(P, (member(P,PosMoves), agent_adjacent(Agent,P,empty)),ActualMoves), % among possible moves, which can move right now (there is no agent)
+
+    format('Before call::: Agent: ~w, In:~w, PosMoves:~w ActualMoves:~w\n',[Agent,Pos,PosMoves,ActualMoves]),
+    format('Agent in : ~w, PosMoves: ~w, Divergence: ~w\n',[Pos,PosMoves,Divergences]),
+
+    (length(ActualMoves,0)  -> FinalMove=Pos 
+    ;otherwise              -> choose_move(Agent,Pos,PosMoves,Path,Divergences,Move),
                                                        (my_agents(As), findall(Ag,(member(Ag,As), get_agent_position(Ag,P),P==Move),Conflict),
                                                         \+ length(Conflict,0) -> FinalMove = Pos, get_agent_state(Agent,Updated,Divs), Updated=[_|Rest],
                                                                                  update_agent_state(Agent,Rest,Divs), format("AGENT: ~w conflicts with Agent:~w, Intended:~w", [Agent,Conflict,Move])
                                                                                  % If the move conflicts with agent position, cancel the move
                                                         ;otherwise            -> FinalMove=Move)).
-    % choose_move(Agent,Pos,PosMoves,Path,Divergences,Dead,Move),
-    % FinalMove=Move.
+ 
 
 choose_move(Agent,Pos,[],Path,Divergences,Move) :-
     update_dead_moves(Pos),
     findall(Next,
             ((map_adjacent(Pos,Next,empty);map_adjacent(Pos,Next,a(_))), \+ is_dead_move(Next)),
             Backtracking),
-    format("Bactracking:~w", [Backtracking]),
+    format('Bactracking:~w', [Backtracking]),
     Backtracking=[Move], NewPath=[Move|Path],
     (member(Pos,Divergences) -> Divergences = [_|Rest], NewDivs= Rest,
                                 update_divergence_map(Pos,Move) % Sets the divergence point to the previous divergence (Since the divergence itself is a dead end)
     ;otherwise               -> NewDivs=Divergences),
     update_agent_state(Agent,NewPath,NewDivs),
-    format("Path:~w, Move:~w\n\n", [NewPath,Move]).
+    format('Path:~w, Move:~w\n\n', [NewPath,Move]).
 
-% choose_move(+Pos,+PosMoves,+Path,+Backtrack,-Move)
+
 choose_move(Agent,Pos,PosMoves,Path,Divergences,Move) :-
     (length(PosMoves,1) -> PosMoves=[Move],NewDivs=Divergences,format("F\n") % Follow the move if there is only single possible move
-    ;otherwise          -> (get_divergence_map(Pos,RightPath),
+    ;otherwise          -> ( PosMoves = [P|Ps], 
+    (map_adjacent(P,_,unknown)  -> Move = P
+    ;otherwise                  -> choose_move(Agent,Pos,Ps,Path,Divergences,Move)))),
+    
+   % choose_move(Agent,Pos,PosMoves,Path,Divergences,Move)
+        
+        
+        
+        
+        get_divergence_map(Pos,RightPath),
                             \+is_dead_move(RightPath)            -> findall(M, (member(M,PosMoves), M \= RightPath), Alter),
                                                                     Alter=[Move|_],
                                                                     NewDivs=Divergences,format("G\n")
-                                    ;otherwise                   -> (\+get_divergence_map(Pos,_) -> NewDivs=[Pos|Divergences]
-                                                                    ;otherwise                    -> NewDivs=Divergences),
-                                                                     PosMoves=[Move|_], update_divergence_map(Pos,Move))),
+    %                                ;otherwise                   -> (\+get_divergence_map(Pos,_) -> NewDivs=[Pos|Divergences]
+    %                                                                ;otherwise                    -> NewDivs=Divergences),
+    %                                                                 PosMoves=[Move|_], update_divergence_map(Pos,Move))),
+    NewDivs=Divergences,
     NewPath=[Move|Path],update_agent_state(Agent,NewPath,NewDivs),
     format("Path:~w\n\n", [NewPath]).
 
