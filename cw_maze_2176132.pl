@@ -1,204 +1,140 @@
-m(north). 
-m(east).
-m(south). 
-m(west).
-m(exit).
+% State: Saves Path, Backtrack, Move info
+% 1. solve_maze: initialize agent state
+% 2. solve_maze(_,_) : find_moves -> returns NewState / Moves / New DivergenceMap
+%  -> executes moves/ (Recursive)
+% 3. find_moves(recursive) -> find_moves_dfs -> returns NewState
+% 4. find_moves_dfs -> select_move
+% 5. select_move -> a. Backtrack : follow the move (moves = 0)
+%                -> b. multiple moves: pick one (moves >= 2)
+%                -> c. finished Backtrack : update DivergenceMap, follow the path that didnt take
 
-direction(p(X,Y), west, p(X1,Y)) :- X1 is X-1.
-direction(p(X,Y), east, p(X1,Y)) :- X1 is X+1.
-direction(p(X,Y), north, p(X,Y1)) :- Y1 is Y-1.
-direction(p(X,Y), south, p(X,Y1)) :- Y1 is Y+1.
+% Path stores only the right route (keeps elimnating dead ends)
+% Backtrack is a path storing from backtracking position to the original divergence
+% Divergences stores right divergences that the agent encounters
 
-opposite_direction(north, south).
-opposite_direction(south, north).
-opposite_direction(east, west).
-opposite_direction(west, east).
+:- dynamic agent_state/4. % agent_state(Agent, Path, Backtrack)
+:- dynamic divergence_map/2. % divergence_map(Location, RightPath)
+:- dynamic dead_moves/1.
 
-% initial call
+% Solve the maze, aiming to get all the agents to p(N,N)
 solve_maze :-
-    format('------------------solve maze ~n'),
-    my_agents(My_agents),
-    format('my_agents : ~w~n', [My_agents]),
-    initialise_entities(My_agents, [], [], Agents, Entities),
-    evolve_state(state(Entities, [], Agents, [], []), _).
+    my_agents(Agents),
+    reverse(Agents,NewAgents),
+    maplist(init_agent_state,NewAgents),  % Initialize agent states
+    init_map_state,
+    init_dead_moves,
+    solve_maze(NewAgents).
 
+solve_maze(Agents) :-
+    print_divergence_map,
+    find_moves(Agents,Moves),
+    agents_do_moves(Agents,Moves),
+    solve_maze(Agents).
 
-initialise_entities([], Agents, Entities, Agents, Entities) :-
-    format('finished').
-initialise_entities([Agent|Agents], Temp_agents, Temp_entities, Updated_agents, Updated_entities) :-
-    get_agent_position(Agent, Current_position),
-    format('1'),
-    findall(
-        path(Pos, Direction), 
-        (
-            agent_adjacent(Agent, Pos, empty), 
-            direction(Current_position, Direction, Pos)
-        ), 
-        New_paths
-    ),
-    format('2'),
-    (
-        New_paths = []
-        ->  format('3'), initialise_entities(Agents, [Agent|Temp_agents], Temp_entities, Updated_agents, Updated_entities)
-        ;   New_paths = [path(_, D)|_], format('4~n'),
-            initialise_entities(Agents, Temp_agents, [entity(Agent, D)|Temp_entities], Updated_agents, Updated_entities)
-    ).
+init_agent_state(Agent) :-
+    retractall(agent_state(Agent,_,_,_)),
+    get_agent_position(Agent,Pos),
+    assert(agent_state(Agent,[Pos],[],[])).
 
+get_agent_state(Agent,Path,Divergences,Dead) :-
+    agent_state(Agent,Path,Divergences,Dead).
 
-% main loop
-evolve_state(State, New_state) :-
-    %State = state(Entities, Move_queue, Available_agents, Waiting_list, Explored_nodes),
-    format('Main check 0 : ~w~n', [State]),
+update_agent_state(Agent,Path,Divergences,Dead) :-
+    retractall(agent_state(Agent,_,_,_)), % Remove the existing state
+    assert(agent_state(Agent,Path,Divergences,Dead)). % Assert the new state
 
-    next_move(State, State_1, []),
-    format('Main check 1 : ~w~n', [State_1]),
+init_map_state() :-
+    retractall(divergence_map(_,_)).
 
-    State_1 = state(_, _, Available_agents_1, _, _),
-    queue_waiting_list(Available_agents_1, State_1, State_2),
-    format('Main check 2 : ~w~n', [State_2]),
+% Query divergence map
+get_divergence_map(Location, RightPath) :-
+    divergence_map(Location, RightPath).
 
-    State_2 = state(_, Move_queue_2, Available_agents_2, Waiting_list_2, Explored_nodes_2),
-    format('Move_queue before execute : ~w~n', [Move_queue_2]),
-    
-    execute_queue(Move_queue_2, State_2, [], [], state([], [], Available_agents_2, Waiting_list_2, Explored_nodes_2), State_3),
-    %format('Move_queue after execute  : ~w~n', [Move_queue_3]),
-    evolve_state(State_3, New_state).
+% Update divergence map
+update_divergence_map(Location,RightPath) :-
+    retractall(divergence_map(Location,_)),
+    assert(divergence_map(Location, RightPath)).
 
+delete_divergence_map(Location,RightPath) :-
+    retractall(divergence_map(Location,RightPath)).
 
-% recursive call updating entities
-next_move( state([], Move_queue, Available_agents, Waiting_list, Explored_nodes), Updated_State, Temp_entities) :-
-    Updated_State = state(Temp_entities, Move_queue, Available_agents, Waiting_list, Explored_nodes), !.
-% recursive call updating entities
-next_move(State, Updated_State, Temp_entities) :-
-    format('------------------next_move ~n'),
-    State = state(Entities, Move_queue, Available_agents, Waiting_list, Explored_nodes), 
-    format('State >>> Etities : ~w~n Move_queue : ~w~n Available_agents : ~w~n Waiting_list : ~w~n Explored_nodes : ~w~n', [Entities, Move_queue, Available_agents, Waiting_list, Explored_nodes]),
-    Entities = [entity(ID, Going)|Other_entities],
-    get_agent_position(ID, Current_position),
-    (   achieve(ID)
-    ->  leave_maze(ID), ailp_grid_size(N), Max_energy is N*N, my_agent(Agents),
-        (   Agents = []
-        ->  true
-        ;   exit(Agents, p(N, N), Max_energy, [])
-        )
-    ;   findall(path(New_position, Direction), 
-            (agent_adjacent(ID, New_position, empty), 
-            direction(Current_position, Direction, New_position),
-            \+ member(agent_move_queue(entity(ID,_),_), Move_queue),
-            \+ member(path(New_position, _), Explored_nodes),
-            \+ opposite_direction(Going, Direction)
-            ), New_paths),
-        (   New_paths = []
-        ->  (   member(agent_move_queue(entity(ID,Move_direction),_), Move_queue)
-            ->  next_move(state(Other_entities, Move_queue, Available_agents, Waiting_list, Explored_nodes), Updated_State, [entity(ID, Move_direction)|Temp_entities])
-            ;   next_move(state(Other_entities, Move_queue, [ID|Available_agents], Waiting_list, Explored_nodes), Updated_State, Temp_entities)
-            ) 
-        ;   (   New_paths = [path(Path_position, Path_direction)]
-            ->  next_move(state(Other_entities, [agent_move_queue(entity(ID, Path_direction), [Path_position])|Move_queue], Available_agents, Waiting_list, Explored_nodes), Updated_State, [entity(ID, Path_direction)|Temp_entities]) 
-            ;   New_paths = [path(Path_position, Path_direction)| Other_paths],
-                append(Other_paths, Waiting_list, New_waiting_list),
-                append(Other_paths, Explored_nodes, New_Explored_nodes),
-                next_move(state(Other_entities, [agent_move_queue(entity(ID, Path_direction), [Path_position])|Move_queue], Available_agents, New_waiting_list, New_Explored_nodes), Updated_State, [entity(ID, Path_direction)|Temp_entities])
-            )
-        )
-    ).
+% Print all key-value pairs in the divergence map
+print_divergence_map :-
+    findall(Location-RightPath, divergence_map(Location, RightPath), Pairs),
+    print_pairs(Pairs).
 
+% Helper predicate to print each key-value pair
+print_pairs([]).
+print_pairs([Location-RightPath | Rest]) :-
+    format("Divergence at ~w leads to: ~w~n", [Location, RightPath]),
+    print_pairs(Rest).
 
-search_nearest_node(Queue, Visited, Path, Waiting_list) :-
-    Queue = [Next|Rest],
-    Next = [Pos|RPath],
-    ( member(path(Pos, _), Waiting_list) -> Path = Next
-    ; 
-        (   findall([NP,Pos|RPath],
-                    (   (   map_adjacent(Pos,NP,empty) ;
-                            map_adjacent(Pos, NP, a(_))),
-                        \+ member(NP, Visited), 
-                        \+ member([NP|_],Rest)),
-                    Newfound),
-            append(Rest,Newfound,NewQueue),
-            search_nearest_node(NewQueue,[Pos|Visited],Path, Waiting_list)
-        )
-    ).
+init_dead_moves :-
+    retractall(dead_moves(_)),
+    assert(dead_moves([])).
 
+update_dead_moves(NewDeadMove) :-
+    dead_moves(Dead),
+    retractall(dead_moves(_)),
+    assert(dead_moves([NewDeadMove|Dead])).
 
-% queue_waiting_list(State_1, State_2),
-% if there is any available agents and if there is any nodes in waiting list, start exploring that node
-queue_waiting_list([], State, State) :- 
-    format('Looked all available agents ~n').
-queue_waiting_list(_, State, State) :-
-    (State = state(_, _, _, [], _), !);
-    (State = state(_, _, [], _, _), !).
-queue_waiting_list(Free_agents, State, Updated_State) :-
-    format('------------------queue_waiting_list ~n'),
-    State = state(Entities, Move_queue, Available_agents, Waiting_list, Explored_nodes),
-    format('State >>> Etities : ~w~n Move_queue : ~w~n Available_agents : ~w~n Waiting_list : ~w~n Explored_nodes : ~w~n', [Entities, Move_queue, Available_agents, Waiting_list, Explored_nodes]),
-    Free_agents = [Agent | Agents],
-    get_agent_position(Agent, Agent_position),
-    (   search_nearest_agent([[Agent_position]], [], Reversed_path, Waiting_list)  
-    ->  Reversed_path = [Destination|_],
-        reverse(Reversed_path,[_|Path]),
-        format('Go Path : ~w~n', [Path]),
-        select(Agent, Available_agents, Updated_agents),
-        select(path(Destination, Direction), Waiting_list, Updated_waiting_list),
-        queue_waiting_list(Agents, state([entity(Agent, Direction) | Entities], [agent_move_queue(entity(Agent, Direction), Path) | Move_queue], Updated_agents, Updated_waiting_list, Explored_nodes), Updated_State)
-    ;   queue_waiting_list(Agents, State, Updated_State)
-    ).
+is_dead_move(Move) :-
+    dead_moves(Dead),
+    member(Move, Dead).
 
-    %Reversed_path = [P1, P2 |_],
-    %direction(P1, Move_direction, P2),
-    
+find_moves([],[]).
+% find_moves(+AgentsStates,-Moves)
+find_moves([Agent|Rest],[Move|Moves]) :-
+    get_agent_state(Agent,Path,Divergences,Dead),
+    (leave_maze(Agent) -> true
+    ;otherwise         -> find_moves_dfs(Agent,Path,Divergences,FinalMove,Dead), Move=FinalMove,
+                          find_moves(Rest,Moves)).
 
-%execute_queue(Entities_2, Move_queue_2, [], [], [], [], Entities_3, Move_queue_3),
-% translate go for one html tick then execute, update availavle agent if eligable 
-execute_queue([], _, Agent_list, Move_list, State, State) :-
-    format('move... [Agent] : ~w  [Position] : ~w ~n', [Agent_list, Move_list]),
-    agents_do_moves(Agent_list, Move_list).
-execute_queue(Move_queue, Const, Agent_list, Move_list, Temp_state, Updated_State) :-
-    format('------------------execute_queue ~n'),
-    Move_queue = [agent_move_queue(entity(ID, Direction), [Next_position|Path]) | Move_queue_left],
-    format('Move_queue : ~w~n', [Move_queue]),
-    Const = state(Entities_const, Move_queue_const, _, _, _), % can be optimised using shorter form
-    Temp_state = state(Temp_entities, Temp_move_queue, Temp_agents, Waiting_list, Explored_nodes),
-    get_agent_position(ID, Current_position), direction(Current_position, New_direction, Next_position),
-    (   member(Next_position, Move_list)
-    ->  execute_queue(Move_queue_left, Const, Agent_list, Move_list, state([entity(ID, Direction)|Temp_entities], [agent_move_queue(entity(ID, Direction), [Next_position|Path])|Temp_move_queue], Temp_agents, Waiting_list, Explored_nodes), Updated_State)
-    ;   (   lookup_pos(Next_position, empty)
-        ->  (   Path = []
-            ->  (   Direction = exit
-                ->  format('found!!'), agent_do_moves(ID, [Next_position]), format('bye bye'), leave_maze(ID)
-                ;   execute_queue(Move_queue_left, Const, [ID|Agent_list], [Next_position|Move_list], state([entity(ID, New_direction)|Temp_entities], Temp_move_queue, Temp_agents, Waiting_list, Explored_nodes), Updated_State)
-                )
-            ;   execute_queue(Move_queue_left, Const, [ID|Agent_list], [Next_position|Move_list], state([entity(ID, New_direction)|Temp_entities], [agent_move_queue(entity(ID, Direction), Path)|Temp_move_queue], Temp_agents, Waiting_list, Explored_nodes), Updated_State)
-            )
-        ;   lookup_pos(Next_position, a(ID2)),
-            (   member(agent_move_queue(entity(ID2, _), [Next_position2|Path2]), Move_queue_const)
-            ->   get_agent_position(ID2, Current_position2), direction(Current_position2, New_direction2, Next_position2),
-                (   opposite_direction(New_direction, New_direction2)
-                ->  select(agent_move_queue(entity(ID2, _), _), Move_queue_left, Swaped_move_queue),
-                    member(entity(ID2, Direction2), Entities_const),
-                    execute_queue(Swaped_move_queue, Const, Agent_list, Move_list, state([entity(ID, Direction2), entity(ID2, Direction)|Temp_entities], [agent_move_queue(entity(ID, Direction2), Path2), agent_move_queue(entity(ID2, Direction), Path)|Temp_move_queue], Temp_agents, Waiting_list, Explored_nodes), Updated_State)
-                ;   execute_queue(Move_queue_left, Const, Agent_list, Move_list, state([entity(ID, Direction)|Temp_entities], [agent_move_queue(entity(ID, Direction), [Next_position|Path])|Temp_move_queue], Temp_agents, Waiting_list, Explored_nodes), Updated_State)
-                )
-            ;   select(ID2, Temp_agents, Updated_agents),
-                execute_queue(Move_queue_left, Const, Agent_list, Move_list, state([entity(ID2, New_direction)|Temp_entities], [agent_move_queue(entity(ID2, New_direction), Path)|Temp_move_queue], [ID|Updated_agents], Waiting_list, Explored_nodes), Updated_State)
-            )
-        )
-    ).
+% find_moves_dfs(+Agent,+Path,+Backtrack,-Move)
+find_moves_dfs(Agent,Path,Divergences,FinalMove,Dead) :-
+    get_agent_position(Agent,Pos),
+    findall(Next, ((map_adjacent(Pos,Next,empty);map_adjacent(Pos,Next,a(_))), \+ member(Next,Path), \+ is_dead_move(Next)), PosMoves), % \+ agent occupying
+    % findall(P, (member(P,PosMoves), agent_adjacent(Agent,P,empty)),ActualMoves),
+    format("\nBefore call::: Agent: ~w, In:~w, PosMoves:~w\n",[Agent,Pos,PosMoves]),
+    format("Agent in : ~w, PosMoves: ~w, Divergence: ~w\n",[Pos,PosMoves,Divergences]),
+    choose_move(Agent,Pos,PosMoves,Path,Divergences,Dead,Move),
+    (my_agents(As), findall(Ag,(member(Ag,As), get_agent_position(Ag,P),P==Move),Conflict),
+    \+ length(Conflict,0) -> FinalMove = Pos, get_agent_state(Agent,Updated,Divs,Ds), Updated=[_|Rest],
+                            update_agent_state(Agent,Rest,Divs,Ds), format("AGENT: ~w conflicts with Agent:~w, Intended:~w\n", [Agent,Conflict,Move])
+                                % If the move conflicts with agent position, cancel the move
+    ;otherwise            -> FinalMove=Move, format("AGENT: Moved to Move:~w, Path:~w\n",[FinalMove, Path])).
 
+choose_move(Agent,Pos,[],Path,Divergences,Dead,Move) :-
+    update_dead_moves(Pos), % Global Dead positions that agents share
+    NewDead=[Pos|Dead], % Local Dead positions that each agents have
+    findall(Next,
+            ((map_adjacent(Pos,Next,empty);map_adjacent(Pos,Next,a(_))), \+ is_dead_move(Next)),
+            Backtracking),
+    (length(Backtracking,0) ->  findall(P,
+                                ((map_adjacent(Pos,P,empty);map_adjacent(Pos,P,a(_))), \+ member(P,Dead)),
+                                OnlyMoves),
+                                OnlyMoves=[Move], NewPath=[Move|Path]
+                                 % If other agent has already blocked the backtracking path, backtrack via the path that the agent has not gone through
+    ;otherwise              -> Backtracking=[Move], NewPath=[Move|Path]),
+    (member(Pos,Divergences) -> Divergences = [_|Rest], NewDivs= Rest,
+                                update_divergence_map(Pos,Move) % Sets the divergence point to the previous divergence (Since the divergence itself is a dead end)
+    ;otherwise               -> NewDivs=Divergences),
+    update_agent_state(Agent,NewPath,NewDivs,NewDead).
 
-% once an agent found an exit, the maze is solved and other agents go exit stopping exploring
-achieve(Agent) :-
-    get_agent_position(Agent, Position),
-    ailp_grid_size(N),
-    Position = p(N,N).
+% choose_move(+Pos,+PosMoves,+Path,+Backtrack,-Move)
+choose_move(Agent,Pos,PosMoves,Path,Divergences,Dead,Move) :-
+    (length(PosMoves,1) -> PosMoves=[Move],NewDivs=Divergences,format("F\n") % Follow the move if there is only single possible move
+    ;otherwise          -> (get_divergence_map(Pos,RightPath),
+                            \+is_dead_move(RightPath)            -> random_member(Move,PosMoves),
+                                                                    NewDivs=Divergences,format("G\n")
+                            ;otherwise                           -> (\+get_divergence_map(Pos,_) -> NewDivs=[Pos|Divergences]
+                                                                    ;otherwise                   -> NewDivs=Divergences),
+                                                                     PosMoves=[Move|_], update_divergence_map(Pos,Move))),
+    NewPath=[Move|Path], NewDead=Dead, update_agent_state(Agent,NewPath,NewDivs,NewDead).
 
+reduce_backtrack([], _, [], []).
+reduce_backtrack([Element|T], Element, [Element], T) :- !.
+reduce_backtrack([H|T], Element, [H|Before], After) :-
+    reduce_backtrack(T, Element, Before, After).
 
-exit([], _, _, []).
-exit([], _, _, Exit_queue) :-
-    execute_queue(Exit_queue, [], [], Updated_exit_queue),
-    exit([], _, _, Updated_exit_queue).
-exit([Agent|Agents], Exit, Max_energy, Exit_queue) :-
-    get_agent_position(Agent, Agent_position),
-    solve_task_as(go(Exit), go(Exit), Max_energy, Max_energy, [state([Agent_position], 0)], [], [], [move_queue(_, Reversed_path)]),
-    reverse(Reversed_path, [_| Path]),
-    exit(Agents, Exit, Max_energy, [agent_move_queue(entity(Agent, exit), Path)|Exit_queue]).
+parse_head([Head|Rest],Head,Rest).
