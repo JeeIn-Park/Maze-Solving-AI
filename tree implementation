@@ -1,0 +1,23 @@
+use tree depth
+
+when it explored all the leaves, block the node
+
+when an agent arrive to a leaf, check if the higher node is blocked (if there is any other way to exlore, and move to there)
+
+need to go deepest node
+agents always move to deapest node which haven't been blocked when it's free
+
+
+node(depth, direction, Path, cost, children[path])
+
+waiting list[
+
+
+
+]
+
+when it meets dead-end, 
+
+
+
+using current waiting list form, but use it for each node, when it doesn't have any waing list after it reach closed node it should close that node

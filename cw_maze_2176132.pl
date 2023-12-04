@@ -75,9 +75,12 @@ next_move(State, Updated_State, Temp_entities) :-
     format('State >>> Etities : ~w~n Move_queue : ~w~n Available_agents : ~w~n Waiting_list : ~w~n Explored_nodes : ~w~n', [Entities, Move_queue, Available_agents, Waiting_list, Explored_nodes]),
     Entities = [entity(ID, Going)|Other_entities],
     get_agent_position(ID, Current_position),
-    
     (   achieve(ID)
-    ->  ailp_grid_size(N), Max_energy is N*N, my_agent(Agents), exit(Agents, p(N, N), Max_energy, [])
+    ->  leave_maze(ID), ailp_grid_size(N), Max_energy is N*N, my_agent(Agents),
+        (   Agents = []
+        ->  true
+        ;   exit(Agents, p(N, N), Max_energy, [])
+        )
     ;   findall(path(New_position, Direction), 
             (agent_adjacent(ID, New_position, empty), 
             direction(Current_position, Direction, New_position),
@@ -131,7 +134,7 @@ queue_waiting_list(Free_agents, State, Updated_State) :-
     format('State >>> Etities : ~w~n Move_queue : ~w~n Available_agents : ~w~n Waiting_list : ~w~n Explored_nodes : ~w~n', [Entities, Move_queue, Available_agents, Waiting_list, Explored_nodes]),
     Free_agents = [Agent | Agents],
     get_agent_position(Agent, Agent_position),
-    (   search_nearest_node([[Agent_position]], [], Reversed_path, Waiting_list)  
+    (   search_nearest_agent([[Agent_position]], [], Reversed_path, Waiting_list)  
     ->  Reversed_path = [Destination|_],
         reverse(Reversed_path,[_|Path]),
         format('Go Path : ~w~n', [Path]),
@@ -187,8 +190,7 @@ execute_queue(Move_queue, Const, Agent_list, Move_list, Temp_state, Updated_Stat
 achieve(Agent) :-
     get_agent_position(Agent, Position),
     ailp_grid_size(N),
-    Position = p(N,N),
-    leave_maze(Agent).
+    Position = p(N,N).
 
 
 exit([], _, _, []).

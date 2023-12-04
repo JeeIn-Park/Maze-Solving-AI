@@ -64,3 +64,64 @@ delete waiting list only when someone arrive,
 until someone arrive there, compare the distance among available agent and allocate nearest one.
 need to update move queue(also, delelte the original one) and avaiable agent, entity as well
 
+
+rather then just save explored node, store the shortest path and cost to go that node
+when it add a new free agent, search shorted path to go waiting list
+search from the agent location, adding up all the cost,
+when there is an agent already going that node, de-allocate it
+cost needs to be different by at least 3 to 5 
+
+
+entity and agents has last visited node information
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
