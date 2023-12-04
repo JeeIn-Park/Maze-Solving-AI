@@ -92,17 +92,25 @@ find_moves([Agent|Rest],[Move|Moves]) :-
 
 % find_moves_dfs(+Agent,+Path,+Backtrack,-Move)
 find_moves_dfs(Agent,Path,Divergences,FinalMove,Dead) :-
+    format('Deads : ~w~n', [Dead]),
     get_agent_position(Agent,Pos),
     findall(Next, ((map_adjacent(Pos,Next,empty);map_adjacent(Pos,Next,a(_))), \+ member(Next,Path), \+ is_dead_move(Next)), PosMoves), % \+ agent occupying
-    % findall(P, (member(P,PosMoves), agent_adjacent(Agent,P,empty)),ActualMoves),
-    format("\nBefore call::: Agent: ~w, In:~w, PosMoves:~w\n",[Agent,Pos,PosMoves]),
-    format("Agent in : ~w, PosMoves: ~w, Divergence: ~w\n",[Pos,PosMoves,Divergences]),
-    choose_move(Agent,Pos,PosMoves,Path,Divergences,Dead,Move),
-    (my_agents(As), findall(Ag,(member(Ag,As), get_agent_position(Ag,P),P==Move),Conflict),
-    \+ length(Conflict,0) -> FinalMove = Pos, get_agent_state(Agent,Updated,Divs,Ds), Updated=[_|Rest],
-                            update_agent_state(Agent,Rest,Divs,Ds), format("AGENT: ~w conflicts with Agent:~w, Intended:~w\n", [Agent,Conflict,Move])
+    
+    findall(P, (member(P,PosMoves), agent_adjacent(Agent,P,empty)),ActualMoves),
+    format('\nBefore call::: Agent: ~w, In:~w, PosMoves:~w\n',[Agent,Pos,PosMoves]),
+    format('Agent in : ~w, PosMoves: ~w, Divergence: ~w\n',[Pos,PosMoves,Divergences]),
+    (length(PosMoves, 0)    ->   choose_move(Agent,Pos,[],Path,Divergences,Dead,Move), FinalMove = Move
+    ;otherwise              ->
+    (length(ActualMoves,0)  ->  FinalMove = Pos
+    ;otherwise              ->  choose_move(Agent,Pos,PosMoves,Path,Divergences,Dead,Move), FinalMove=Move)).
+    
+
+
+    %(my_agents(As), findall(Ag,(member(Ag,As), get_agent_position(Ag,P),P==Move),Conflict),
+    %\+ length(Conflict,0) -> FinalMove = Pos, get_agent_state(Agent,Updated,Divs,Ds), Updated=[_|Rest],
+    %                        update_agent_state(Agent,Rest,Divs,Ds), format("AGENT: ~w conflicts with Agent:~w, Intended:~w\n", [Agent,Conflict,Move])
                                 % If the move conflicts with agent position, cancel the move
-    ;otherwise            -> FinalMove=Move, format("AGENT: Moved to Move:~w, Path:~w\n",[FinalMove, Path])).
+    %;otherwise            -> FinalMove=Move, format("AGENT: Moved to Move:~w, Path:~w\n",[FinalMove, Path])).
 
 choose_move(Agent,Pos,[],Path,Divergences,Dead,Move) :-
     update_dead_moves(Pos), % Global Dead positions that agents share
