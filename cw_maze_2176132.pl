@@ -98,15 +98,18 @@ find_moves_dfs(Agent,Path,Divergences,MoveQueue,FinalMove) :-
     get_agent_position(Agent,Pos),
     findall(Next, ((map_adjacent(Pos,Next,empty);map_adjacent(Pos,Next,a(_))), \+ member(Next,Path), \+ is_dead_move(Next)), PosMoves), % \+ agent occupying
     findall(P, (member(P,PosMoves),agent_adjacent(Agent,P,empty),\+member(P,MoveQueue)),ActualMoves),
-    format('\nBefore call::: Agent: ~w, In:~w, PosMoves:~w\n',[Agent,Pos,PosMoves]),
+    format('\nBefore call::: Agent: ~w, In:~w, PosMoves:~w, ActualMoves:~w\n',[Agent,Pos,PosMoves,ActualMoves]),
     format('Agent in : ~w, PosMoves: ~w, Divergence: ~w\n',[Pos,PosMoves,Divergences]),
     (length(PosMoves, 0)    ->   
-    (agent_adjacent(Agent,_,a(_))   ->  FinalMove = Pos
+    (agent_adjacent(Agent,_,a(A))   ->  findall(Adj, (agent_adjacent(A,Adj,empty), \+is_dead_move(Adj)), Adjs),
+    (length(Adjs, 0)        -> FinalMove = Pos, update_agent_state(Agent,[],Divergences)
+    ;otherwise              ->  FinalMove = Pos
+    )
     ;otherwise                      ->  choose_move(Agent,Pos,[],Path,Divergences,Move), FinalMove = Move
     )
     ;otherwise              ->
-    (length(ActualMoves,0)  ->  FinalMove = Pos
-    ;otherwise              ->  choose_move(Agent,Pos,PosMoves,Path,Divergences,Move), FinalMove=Move)).
+    (length(ActualMoves,0)  ->  FinalMove = Pos, update_agent_state(Agent,[],Divergences)
+    ;otherwise              ->  choose_move(Agent,Pos,ActualMoves,Path,Divergences,Move), FinalMove=Move)).
     
 
 
