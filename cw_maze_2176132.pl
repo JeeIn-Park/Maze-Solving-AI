@@ -27,7 +27,7 @@ solve_maze :-
 
 solve_maze(Agents) :-
     print_divergence_map,
-    find_moves(Agents,Moves),
+    find_moves(Agents,Moves, []),
     agents_do_moves(Agents,Moves),
     solve_maze(Agents).
 
@@ -82,25 +82,33 @@ is_dead_move(Move) :-
     dead_moves(Dead),
     member(Move, Dead).
 
-find_moves([],[]).
+find_moves([],[], _).
 % find_moves(+AgentsStates,-Moves)
-find_moves([Agent|Rest],[Move|Moves]) :-
+find_moves([Agent|Rest],[Move|Moves],MoveQueue) :-
     get_agent_state(Agent,Path,Divergences),
     (leave_maze(Agent) -> true
-    ;otherwise         -> find_moves_dfs(Agent,Path,Divergences,FinalMove), Move=FinalMove,
-                          find_moves(Rest,Moves)).
+    ;otherwise         -> find_moves_dfs(Agent,Path,Divergences,MoveQueue,FinalMove), Move=FinalMove,
+                          find_moves(Rest,Moves,[Move|MoveQueue])).
 
 % find_moves_dfs(+Agent,+Path,+Backtrack,-Move)
-find_moves_dfs(Agent,Path,Divergences,FinalMove) :-
+find_moves_dfs(Agent,Path,Divergences,MoveQueue,FinalMove) :-
+    findall(D,(is_dead_move(D)),Deads),
+    format('Dead cells : ~w~n', [Deads]),
+    format('Path : ~w~n', [Path]),
     get_agent_position(Agent,Pos),
     findall(Next, ((map_adjacent(Pos,Next,empty);map_adjacent(Pos,Next,a(_))), \+ member(Next,Path), \+ is_dead_move(Next)), PosMoves), % \+ agent occupying
-    
-    findall(P, (member(P,PosMoves), agent_adjacent(Agent,P,empty)),ActualMoves),
+    findall(P, (member(P,PosMoves),agent_adjacent(Agent,P,empty),\+member(P,MoveQueue)),ActualMoves),
     format('\nBefore call::: Agent: ~w, In:~w, PosMoves:~w\n',[Agent,Pos,PosMoves]),
     format('Agent in : ~w, PosMoves: ~w, Divergence: ~w\n',[Pos,PosMoves,Divergences]),
-    (length(PosMoves, 0)    ->   choose_move(Agent,Pos,[],Path,Divergences,Move), FinalMove = Move
+    (length(PosMoves, 0)    ->   
+    (agent_adjacent(Agent,_,a(_))   ->  FinalMove = Pos
+    ;otherwise                      ->  choose_move(Agent,Pos,[],Path,Divergences,Move), FinalMove = Move
+    )
     ;otherwise              ->
-    (length(ActualMoves,0)  ->  FinalMove = Pos
+    (length(ActualMoves,0)  ->  length(Path,PathLength), 
+    (PathLength < 2         ->  FinalMove = Pos
+    ;otherwise              ->  FinalMove = Pos, Path = [_,_|NewPath], update_agent_state(Agent,NewPath,Divergences)
+    )
     ;otherwise              ->  choose_move(Agent,Pos,PosMoves,Path,Divergences,Move), FinalMove=Move)).
     
 
