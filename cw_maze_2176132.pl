@@ -105,10 +105,7 @@ find_moves_dfs(Agent,Path,Divergences,MoveQueue,FinalMove) :-
     ;otherwise                      ->  choose_move(Agent,Pos,[],Path,Divergences,Move), FinalMove = Move
     )
     ;otherwise              ->
-    (length(ActualMoves,0)  ->  length(Path,PathLength), 
-    (PathLength < 2         ->  FinalMove = Pos
-    ;otherwise              ->  FinalMove = Pos, Path = [_,_|NewPath], update_agent_state(Agent,NewPath,Divergences)
-    )
+    (length(ActualMoves,0)  ->  FinalMove = Pos
     ;otherwise              ->  choose_move(Agent,Pos,PosMoves,Path,Divergences,Move), FinalMove=Move)).
     
 
