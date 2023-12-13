@@ -61,12 +61,6 @@ heuristic(Next_position, Task, Heuristic) :-
     ; Heuristic = 0 ).
 
 
-% merge_and_sort_by_heuristic(+Other_states,+New_states,-Priority_queue)
-merge_and_sort_by_heuristic(Path,[], Path).
-merge_and_sort_by_heuristic(Path, [Next | Rest], Priority_queue) :-
-    insert(Path, Next, Updated),
-    merge_and_sort_by_heuristic(Updated, Rest, Priority_queue).
-
 
 % insert(+Path,+Next,-Priority_queue)
 insert([], State, [State]).
@@ -75,6 +69,15 @@ insert([state(Path, H) | Rest], state(New_path, NH), Priority_queue) :-
     ->  Priority_queue = [state(New_path, NH), state(Path, H) | Rest]
     ;   insert(Rest, state(New_path, NH), Result),
         Priority_queue = [state(Path, H)|Result]).
+
+
+% merge_and_sort_by_heuristic(+Other_states,+New_states,-Priority_queue)
+merge_and_sort_by_heuristic(Path,[], Path).
+merge_and_sort_by_heuristic(Path, [Next | Rest], Priority_queue) :-
+    insert(Path, Next, Updated),
+    merge_and_sort_by_heuristic(Updated, Rest, Priority_queue).
+
+
 
 
 % achieved(+Task,+Pos)

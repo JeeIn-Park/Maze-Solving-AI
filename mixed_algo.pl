@@ -14,17 +14,9 @@ opposite_direction(south, north).
 opposite_direction(east, west).
 opposite_direction(west, east).
 
-% tree_node(Position, Direction, Path, Is_explored).
-:- dynamic tree_node/4.
-%State = state(Entities, Move_queue, Available_agents).
-:- dynamic state/3.
-
-
 % initial call
 solve_maze :-
     format('------------------solve maze ~n'),
-    my_agents(My_agents),
-    format('my_agents : ~w~n', [My_agents]),
     initialise_entities(My_agents, [], [], Agents, Entities),
     evolve_state(state(Entities, [], Agents, [], []), _).
 
@@ -49,6 +41,11 @@ initialise_entities([Agent|Agents], Temp_agents, Temp_entities, Updated_agents, 
         ;   New_paths = [path(_, D)|_], format('4~n'),
             initialise_entities(Agents, Temp_agents, [entity(Agent, D)|Temp_entities], Updated_agents, Updated_entities)
     ).
+
+initialise_entities(Agent) :-
+    retractall(entity(Agent,_)),
+    get_agent_position(Agent,Pos),
+    assert(agent_state(Agent,[Pos],[])).
 
 
 % main loop
@@ -208,3 +205,6 @@ exit([Agent|Agents], Exit, Max_energy, Exit_queue) :-
     solve_task_as(go(Exit), go(Exit), Max_energy, Max_energy, [state([Agent_position], 0)], [], [], [move_queue(_, Reversed_path)]),
     reverse(Reversed_path, [_| Path]),
     exit(Agents, Exit, Max_energy, [agent_move_queue(entity(Agent, exit), Path)|Exit_queue]).
+
+
+
