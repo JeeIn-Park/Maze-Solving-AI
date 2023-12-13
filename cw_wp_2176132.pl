@@ -1,5 +1,9 @@
 oracle.
 station.
+:- dynamic object/2.
+:- dynamic max_energy/1.
+:- dynamic query_energy/1.
+
 
 assert_object([]).
 assert_object([Object|Other]) :-
@@ -8,20 +12,18 @@ assert_object([Object|Other]) :-
 
 
 map_reading :- 
-    retractall(o(_)-_),
-    retractall(c(_)-_),
+    retractall(object(_,_)),
     ailp_grid_size(N),
-    findall(o(ID)-p(X, Y),
+    findall(object(o(ID), p(X, Y)),
         (between(1, N, X), between(1, N, Y), lookup_pos(p(X, Y), o(ID))),
         Oracles),
-    format('map_reading | oracles : ~w~n', [Oracles]),
+    format('oracles : ~w~n', [Oracles]),
     assert_object(Oracles),
-    findall(c(ID)-p(X, Y),
+    findall(object(c(ID), p(X, Y)),
         (between(1, N, X), between(1, N, Y), lookup_pos(p(X, Y), c(ID))),
         Stations),
-    format('map_reading | stations : ~w~n', [Stations]),
+    format('stations : ~w~n', [Stations]),
     assert_object(Stations).
-
 
 
 % True if link L appears on A's Wikipedia page
@@ -73,20 +75,23 @@ eliminate(_, [A], A) :-
 eliminate(G, [A|As], Result) :-
     get_agent_energy(G, E),
     get_agent_position(G, P),
-    ailp_grid_size(N),
-    X is ( N * N / 4 ), ceiling(X, Max_energy), !, 
-    format('eliminate | agent energy [~w], agent position [~w], grid size [~w], max energy [~w] ~n', [E, P, N, Max_energy]),
+    format('eliminate | agent energy [~w], agent position [~w], grid size [~w] ~n', [E, P, N]),
     get_oracles(oracle, Oracles),
     format('eliminate | oracle locations : ~w~n', [Oracles]),
     find_nearest(P, Oracles, E, Max_energy, Destination, OID, Path, Cost),
-    New_energy is E - Cost,
+    New_energy is E - Cost - (Max_energy/10),
+    format('eliminate | new energy : ~w~n', [New_energy]),
     
     get_stations(station, Station_locations),
     format('eliminate | station locations : ~w~n', [Station_locations]),
     ( find_nearest(Destination, Station_locations, New_energy, Max_energy, _, _, _, _)
     ->  agent_do_moves(G, Path),
-        format('eliminate |  --- asking ~n'),
-        agent_ask_oracle(G, o(OID), link, L),
+        format('eliminate |  --- asking [~w]~n', [OID]),
+        ( \+ agent_check_oracle(G, o(OID))
+        ->  agent_ask_oracle(G, o(OID), link, L),
+            retractall(object(o(OID),_))
+        ;   retractall(object(o(OID),_))
+        ),
         format('eliminate | --- link : ~w~n', [L]), 
         include(actor_has_link(L), [A|As], New_As),
         eliminate(G, New_As, Result)
@@ -101,6 +106,14 @@ eliminate(G, [A|As], Result) :-
 
 % Deduce the identity of the secret actor A
 find_identity(A) :- 
+    ailp_grid_size(N),
+    X is ( N * N / 4 ), ceiling(X, Max_energy),
+    retractall(max_energy(_)),
+    assert(max_energy(Max_energy)),
+    Y is ( Max_energy / 10 ), ceiling(Y, Query_energy),
+    retractall(query_energy(_)),
+    assert(query_energy(Query_energy)),
+
     format('find_identity | going to check agent identity... ~n'),
     map_reading,
     format('find_identity | >> map reading done << ~n'),
