@@ -1,6 +1,7 @@
 :- dynamic achieve/1.
 :- dynamic exit/1.
 :- dynamic max_energy/1.
+:- dynamic finish/1.
 
 m(north). 
 m(east).
@@ -60,6 +61,9 @@ initialise_entities([Agent|Agents], Temp_agents, Temp_entities, Updated_agents, 
 
 % main loop
 evolve_state(State, New_state) :-
+    (   finish(y)
+    -> true
+    ;
     %State = state(Entities, Move_queue, Available_agents, Waiting_list, Explored_nodes),
     format('Main check 0 : ~w~n', [State]),
 
@@ -75,7 +79,9 @@ evolve_state(State, New_state) :-
     
     execute_queue(Move_queue_2, State_2, [], [], state([], [], Available_agents_2, Waiting_list_2, Explored_nodes_2), State_3),
     %format('Move_queue after execute  : ~w~n', [Move_queue_3]),
-    evolve_state(State_3, New_state).
+    evolve_state(State_3, New_state)
+    ).
+
 
 
 % recursive call updating entities
@@ -99,11 +105,9 @@ next_move(State, Updated_State, Temp_entities) :-
         format('left ~n'),
         my_agents(Agents), 
         format('agents : ~w~n', [Agents]),
-        Temp_entities = [], 
-        format('TM : ~w~n', [Temp_entities]),
         Updated_State = state([], Move_queue, [], [], []),
         format('no more next move'),
-        go_out(Agents, [], Updated_State)
+        go_out(Agents, [], state([], [], [], [], []))
     ;   findall(path(New_position, Direction), 
             (agent_adjacent(ID, New_position, empty), 
             direction(Current_position, Direction, New_position),
@@ -138,6 +142,7 @@ search_nearest_node(Queue, Visited, Path, Waiting_list) :-
                         \+ member(NP, Visited), 
                         \+ member([NP|_],Rest)),
                     Newfound),
+            format('Newfound : ~w~n', [Newfound]),
             append(Rest,Newfound,NewQueue),
             search_nearest_node(NewQueue,[Pos|Visited],Path, Waiting_list)
         )
@@ -173,6 +178,8 @@ queue_waiting_list(Free_agents, State, Updated_State) :-
 
 %execute_queue(Entities_2, Move_queue_2, [], [], [], [], Entities_3, Move_queue_3),
 % translate go for one html tick then execute, update availavle agent if eligable 
+execute_queue([], _, _, _, state([],[],[],[],[]), State) :-
+    exit(y), State = state([],[],[],[],[]), retractall(finish(_)), assert(finish(y)).
 execute_queue([], _, Agent_list, Move_list, State, State) :-
     format('move... [Agent] : ~w  [Position] : ~w ~n', [Agent_list, Move_list]),
     agents_do_moves(Agent_list, Move_list).
@@ -216,9 +223,14 @@ go_out([], Exit_queue, State) :-
     format('executing finishing~n'),
     execute_queue(Exit_queue, State, [], [], _, _).
 go_out([Agent|Agents], Exit_queue, State) :-
-    go_out(Exit), max_energy(Max_energy),
+    exit(Exit), 
+    format('go_out | 1 ~n'),
+    max_energy(Max_energy),
+    format('go_out | 2 ~n'),
     get_agent_position(Agent, Agent_position),
-    solve_task_as(go(Exit), go(Exit), Max_energy, Max_energy, [state([Agent_position], 0)], [], [], [move_queue(_, Reversed_path)]),
+    format('go_out | 3 ~n'),
+    search_nearest_node([[Agent_position]], [], Reversed_path, [path(Exit, e)]),
+    format('go_out | 4 ~n'),
     reverse(Reversed_path, [_| Path]),
     format('going out path : ~w~n', [Path]),
     go_out(Agents, [agent_move_queue(entity(Agent, e), Path)|Exit_queue], State).

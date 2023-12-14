@@ -46,7 +46,7 @@ solve_task_as(Original_task, Task, E, Max_energy, Path, Visited_node, Current_mo
                     \+ member(New_position, Visited_node),
                     \+ member(state([New_position|_], _), Path)
                 ), New_states) 
-            ->  (merge_and_sort_by_heuristic(Other_states, New_states, Priority_queue),
+            ->  format('new states : ~w~n', [New_states]),(merge_and_sort_by_heuristic(Other_states, New_states, Priority_queue),
                 solve_task_as(Original_task, Task, E, Max_energy, Priority_queue, [Current_Position|Visited_node], Current_move_queue, Move_queue))
             ;   format('findall fail'),solve_task_as(Original_task, Task, E, Max_energy, Other_states, Visited_node, Current_move_queue, Move_queue)
             )

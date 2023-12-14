@@ -55,14 +55,17 @@ adjacent_empty_cell(Location, From, Nearest, Distance) :-
 
 
 find_nearest(From, oracle, Energy, Destination, ID, Path, Cost) :-
+    format('find nearest oracle~n'),
     findall(Map_distance-ID,
         ( object(o(ID), Location),
         map_distance(From, Location, Map_distance)
         ),Oracles),
+        format('oracles : ~w~n', [Oracles]),
     keysort(Oracles, Sorted_Oracles),
     nearest_oracle(From, Sorted_Oracles, Energy, Destination, ID, Path, Cost).
 
 find_nearest(From, station, Energy, Destination, ID, Path, Cost) :-
+    format('find nearest station~n'),
     findall(Map_distance-ID,
         ( object(c(ID), Location),
         map_distance(From, Location, Map_distance)
@@ -71,6 +74,7 @@ find_nearest(From, station, Energy, Destination, ID, Path, Cost) :-
     nearest_station(From, Sorted_stations, Energy, Destination, ID, Path, Cost).
 
 find_nearest_oracle(From, Energy, ID, Cost) :-
+    format('go nearest oracle~n'),
     findall(Map_distance-ID,
         ( object(o(ID), Location),
         map_distance(From, Location, Map_distance)
@@ -80,6 +84,7 @@ find_nearest_oracle(From, Energy, ID, Cost) :-
 
 
 nearest_oracle(From, [_-ID|Oracles], Energy, Destination, ID, Path, Cost) :-
+    format('nearest_oracle | find nearest oracle~n'),
     object(o(ID), Location),
     max_energy(Max_energy),
     adjacent_empty_cell(Location, From, Adj_location, _),
@@ -92,6 +97,7 @@ nearest_oracle(From, [_-ID|Oracles], Energy, Destination, ID, Path, Cost) :-
 
 
 nearest_station(From, [_-ID|Oracles], Energy, Destination, ID, Path, Cost) :-
+    format('nearest_station | find nearest station~n'),
     object(c(ID), Location),
     max_energy(Max_energy),
     adjacent_empty_cell(Location, From, Adj_location, _),
@@ -103,6 +109,7 @@ nearest_station(From, [_-ID|Oracles], Energy, Destination, ID, Path, Cost) :-
     ).
 
 go_nearest_oracle(From, [_-ID|Oracles], Energy, ID, Cost) :-
+    format('go_nearest_oracle | find nearest oracle~n'),
     object(o(ID), Location),
     adjacent_empty_cell(Location, From, Adj_location, _), !,
     (solve_task(go(Adj_location), Cost) ; go_nearest_oracle(From, Oracles, Energy, ID, Cost)).
@@ -164,7 +171,6 @@ find_identity(A) :-
     Y is ( Max_energy / 10 ), ceiling(Y, Query_energy),
     retractall(query_energy(_)),
     assert(query_energy(Query_energy)),
-
     format('find_identity | going to check agent identity... ~n'),
     map_reading,
     format('find_identity | >> map reading done << ~n'),
