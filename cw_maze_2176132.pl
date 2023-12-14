@@ -14,12 +14,6 @@ opposite_direction(south, north).
 opposite_direction(east, west).
 opposite_direction(west, east).
 
-% tree_node(Position, Direction, Path, Is_explored).
-:- dynamic tree_node/4.
-%State = state(Entities, Move_queue, Available_agents).
-:- dynamic state/3.
-
-
 % initial call
 solve_maze :-
     format('------------------solve maze ~n'),
