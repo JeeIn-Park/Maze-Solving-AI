@@ -102,7 +102,7 @@ agent_do_move_queue(_, [], Current_cost, Cost) :-
 agent_do_move_queue(A, [Current_move|Rest_move_queue], Current_cost, Cost) :-
     Current_move = move_queue(Task, Reversed_path),
     reverse(Reversed_path, [_| Path]),
-    length(Reversed_path, New_cost),
+    length(Path, New_cost),
     agent_do_moves(A, Path),
     (Task = find(c(N)) 
     ->  agent_topup_energy(A, c(N)),

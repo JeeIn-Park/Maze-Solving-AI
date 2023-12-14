@@ -53,56 +53,93 @@ adjacent_empty_cell(Location, From, Nearest, Distance) :-
     Sorted = [_-Nearest | _].
 
 
-get_oracles(oracle, Oracles) :-
-    findall(ID-Location, object(o(ID), Location), Oracles).
-get_stations(station, Stations) :-
-    findall(ID-Location, object(c(ID), Location), Stations).
+
+find_nearest(From, oracle, Energy, Destination, ID, Path, Cost) :-
+    findall(Map_distance-ID,
+        ( object(o(ID), Location),
+        map_distance(From, Location, Map_distance)
+        ),Oracles),
+    keysort(Oracles, Sorted_Oracles),
+    nearest_oracle(From, Sorted_Oracles, Energy, Destination, ID, Path, Cost).
+
+find_nearest(From, station, Energy, Destination, ID, Path, Cost) :-
+    findall(Map_distance-ID,
+        ( object(c(ID), Location),
+        map_distance(From, Location, Map_distance)
+        ),Stations),
+    keysort(Stations, Sorted_stations),
+    nearest_station(From, Sorted_stations, Energy, Destination, ID, Path, Cost).
 
 
-find_nearest(From, Locations, Energy, Max, Destination, ID, Path, Cost) :-
-    findall(Distance-move_queue(ID, Reversed_path),
-        (member(ID-Location, Locations),
-        adjacent_empty_cell(Location, From, Adj_location, _),
-        solve_task_as(go(Adj_location), go(Adj_location), Energy, Max, [state([From], 0)], [], [], [move_queue(go(Adj_location), Reversed_path)]),
-        length(Reversed_path, Distance)),
-        Move_queue),
-    keysort(Move_queue, [Cost-move_queue(ID, [Destination | RPath]) | _]),
-    reverse([Destination | RPath], [_|Path]).
+
+nearest_oracle(From, [_-ID|Oracles], Energy, Destination, ID, Path, Cost) :-
+    object(o(ID), Location),
+    max_energy(Max_energy),
+    adjacent_empty_cell(Location, From, Adj_location, _),
+    ( solve_task_as(go(Adj_location), go(Adj_location), Energy, Max_energy, [state([From], 0)], [], [], [move_queue(go(Adj_location), Reversed_path)|_])
+    ->  Reversed_path = [Destination|_],
+        reverse(Reversed_path, [_|Path]),
+        length(Path, Cost)
+    ;   nearest_oracle(From, [Oracles], Energy, Destination, ID, Path, Cost)
+    ).
+
+
+nearest_station(From, [_-ID|Oracles], Energy, Destination, ID, Path, Cost) :-
+    object(c(ID), Location),
+    max_energy(Max_energy),
+    adjacent_empty_cell(Location, From, Adj_location, _),
+    ( solve_task_as(go(Adj_location), go(Adj_location), Energy, Max_energy, [state([From], 0)], [], [], [move_queue(go(Adj_location), Reversed_path)|_])
+    ->  Reversed_path = [Destination|_],
+        reverse(Reversed_path, [_|Path]),
+        length(Path, Cost)
+    ;   nearest_station(From, [Oracles], Energy, Destination, ID, Path, Cost)
+    ).
 
 
 eliminate(_, [A], A) :- 
     format('eliminate | found identity : ~w~n', [A]), !.
 eliminate(G, [A|As], Result) :-
+    query_energy(Query_energy),
     get_agent_energy(G, E),
     get_agent_position(G, P),
-    format('eliminate | agent energy [~w], agent position [~w], grid size [~w] ~n', [E, P, N]),
-    get_oracles(oracle, Oracles),
-    format('eliminate | oracle locations : ~w~n', [Oracles]),
-    find_nearest(P, Oracles, E, Max_energy, Destination, OID, Path, Cost),
-    New_energy is E - Cost - (Max_energy/10),
-    format('eliminate | new energy : ~w~n', [New_energy]),
-    
-    get_stations(station, Station_locations),
-    format('eliminate | station locations : ~w~n', [Station_locations]),
-    ( find_nearest(Destination, Station_locations, New_energy, Max_energy, _, _, _, _)
-    ->  agent_do_moves(G, Path),
-        format('eliminate |  --- asking [~w]~n', [OID]),
-        ( \+ agent_check_oracle(G, o(OID))
-        ->  agent_ask_oracle(G, o(OID), link, L),
-            retractall(object(o(OID),_))
-        ;   retractall(object(o(OID),_))
-        ),
-        format('eliminate | --- link : ~w~n', [L]), 
-        include(actor_has_link(L), [A|As], New_As),
-        eliminate(G, New_As, Result)
-    ;   find_nearest(P, Station_locations, E, Max_energy, _, CID, Charge_path, _),
+    format('eliminate | agent energy [~w], at position [~w] ~n', [E, P]),
+    (find_nearest(P, oracle, E, Destination, OID, Path, Cost)
+    ->  New_energy is E - Cost - Query_energy,
+        format('eliminate | new energy : ~w~n', [New_energy]),
+        ( find_nearest(Destination, station, New_energy, _, _, _, _)
+        ->  agent_do_moves(G, Path),
+            format('eliminate |  --- asking [~w]~n', [OID]),
+            ( \+ agent_check_oracle(G, o(OID))
+            ->  agent_ask_oracle(G, o(OID), link, L),
+                format('eliminate | --- link : ~w~n', [L]), 
+                include(actor_has_link(L), [A|As], New_As),
+                retractall(object(o(OID),_))
+            ;   retractall(object(o(OID),_))
+            ), eliminate(G, New_As, Result)
+        ;   format('eliminate | will not be able to go charging station.. ~n'),
+            ( find_nearest(P, station, E, _, CID, Charge_path, _)
+            ->  agent_do_moves(G, Charge_path),
+                agent_topup_energy(G, c(CID)),
+                format('eliminate | going to charge first ~n'),
+                eliminate(G, [A|As], Result)
+            ;   format('eliminate | cannot go to charge station, visit oracle ~n'),
+                agent_do_moves(G, Path),
+                ( \+ agent_check_oracle(G, o(OID))
+                ->  agent_ask_oracle(G, o(OID), link, L),
+                    include(actor_has_link(L), [A|As], New_As),
+                    retractall(object(o(OID),_))
+                ;   retractall(object(o(OID),_))
+                ), eliminate(G, New_As, Result)
+            )  
+        )
+    ;   format('eliminate | cannot reach oracle, try charging~n'),
+        find_nearest(P, station, E, Charge_destination, CID, Charge_path, _),
+        max_energy(Max_energy),
+        
         agent_do_moves(G, Charge_path),
         agent_topup_energy(G, c(CID)),
         eliminate(G, [A|As], Result)
     ).
-
-
-
 
 % Deduce the identity of the secret actor A
 find_identity(A) :- 
