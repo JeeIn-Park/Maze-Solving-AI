@@ -70,13 +70,20 @@ find_nearest(From, station, Energy, Destination, ID, Path, Cost) :-
     keysort(Stations, Sorted_stations),
     nearest_station(From, Sorted_stations, Energy, Destination, ID, Path, Cost).
 
+find_nearest_oracle(From, Energy, ID, Cost) :-
+    findall(Map_distance-ID,
+        ( object(o(ID), Location),
+        map_distance(From, Location, Map_distance)
+        ),Oracles),
+    keysort(Oracles, Sorted_Oracles),
+    go_nearest_oracle(From, Sorted_Oracles, Energy, ID, Cost).
 
 
 nearest_oracle(From, [_-ID|Oracles], Energy, Destination, ID, Path, Cost) :-
     object(o(ID), Location),
     max_energy(Max_energy),
     adjacent_empty_cell(Location, From, Adj_location, _),
-    ( solve_task_as(go(Adj_location), go(Adj_location), Energy, Max_energy, [state([From], 0)], [], [], [move_queue(go(Adj_location), Reversed_path)|_])
+    ( solve_task_as(go(Adj_location), go(Adj_location), Energy, Max_energy, [state([From], 0)], [], [], [move_queue(go(Adj_location), Reversed_path)])
     ->  Reversed_path = [Destination|_],
         reverse(Reversed_path, [_|Path]),
         length(Path, Cost)
@@ -88,13 +95,18 @@ nearest_station(From, [_-ID|Oracles], Energy, Destination, ID, Path, Cost) :-
     object(c(ID), Location),
     max_energy(Max_energy),
     adjacent_empty_cell(Location, From, Adj_location, _),
-    ( solve_task_as(go(Adj_location), go(Adj_location), Energy, Max_energy, [state([From], 0)], [], [], [move_queue(go(Adj_location), Reversed_path)|_])
+    ( solve_task_as(go(Adj_location), go(Adj_location), Energy, Max_energy, [state([From], 0)], [], [], [move_queue(go(Adj_location), Reversed_path)])
     ->  Reversed_path = [Destination|_],
         reverse(Reversed_path, [_|Path]),
         length(Path, Cost)
     ;   nearest_station(From, [Oracles], Energy, Destination, ID, Path, Cost)
     ).
 
+go_nearest_oracle(From, [_-ID|Oracles], Energy, ID, Cost) :-
+    object(o(ID), Location),
+    adjacent_empty_cell(Location, From, Adj_location, _), !,
+    (solve_task(go(Adj_location), Cost) ; go_nearest_oracle(From, Oracles, Energy, ID, Cost)).
+ 
 
 eliminate(_, [A], A) :- 
     format('eliminate | found identity : ~w~n', [A]), !.
@@ -133,12 +145,14 @@ eliminate(G, [A|As], Result) :-
             )  
         )
     ;   format('eliminate | cannot reach oracle, try charging~n'),
-        find_nearest(P, station, E, Charge_destination, CID, Charge_path, _),
-        max_energy(Max_energy),
-        
-        agent_do_moves(G, Charge_path),
-        agent_topup_energy(G, c(CID)),
-        eliminate(G, [A|As], Result)
+        find_nearest_oracle(P, E, OID, _),
+        ( \+ agent_check_oracle(G, o(OID))
+        ->  agent_ask_oracle(G, o(OID), link, L),
+            format('eliminate | --- link : ~w~n', [L]), 
+            include(actor_has_link(L), [A|As], New_As),
+            retractall(object(o(OID),_))
+        ;   retractall(object(o(OID),_))
+        ), eliminate(G, New_As, Result)
     ).
 
 % Deduce the identity of the secret actor A
