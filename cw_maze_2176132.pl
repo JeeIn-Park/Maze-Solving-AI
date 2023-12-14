@@ -1,8 +1,12 @@
+:- dynamic achieve/1.
+:- dynamic exit/1.
+:- dynamic max_energy/1.
+
 m(north). 
 m(east).
 m(south). 
 m(west).
-m(exit).
+m(e).
 
 direction(p(X,Y), west, p(X1,Y)) :- X1 is X-1.
 direction(p(X,Y), east, p(X1,Y)) :- X1 is X+1.
@@ -14,8 +18,17 @@ opposite_direction(south, north).
 opposite_direction(east, west).
 opposite_direction(west, east).
 
+
 % initial call
 solve_maze :-
+    retractall(achieve(_)),
+    assert(achieve(n)),
+    ailp_grid_size(N),
+    retractall(exit(_)),
+    assert(exit(p(N,N))),
+    X is ( N * N / 4 ), ceiling(X, Max_energy),
+    retractall(max_energy(_)),
+    assert(max_energy(Max_energy)),
     format('------------------solve maze ~n'),
     my_agents(My_agents),
     format('my_agents : ~w~n', [My_agents]),
@@ -24,7 +37,7 @@ solve_maze :-
 
 
 initialise_entities([], Agents, Entities, Agents, Entities) :-
-    format('finished').
+    format('finished~n').
 initialise_entities([Agent|Agents], Temp_agents, Temp_entities, Updated_agents, Updated_entities) :-
     get_agent_position(Agent, Current_position),
     format('1'),
@@ -67,6 +80,7 @@ evolve_state(State, New_state) :-
 
 % recursive call updating entities
 next_move( state([], Move_queue, Available_agents, Waiting_list, Explored_nodes), Updated_State, Temp_entities) :-
+    format('no entity!'),
     Updated_State = state(Temp_entities, Move_queue, Available_agents, Waiting_list, Explored_nodes), !.
 % recursive call updating entities
 next_move(State, Updated_State, Temp_entities) :-
@@ -74,17 +88,26 @@ next_move(State, Updated_State, Temp_entities) :-
     State = state(Entities, Move_queue, Available_agents, Waiting_list, Explored_nodes), 
     format('State >>> Etities : ~w~n Move_queue : ~w~n Available_agents : ~w~n Waiting_list : ~w~n Explored_nodes : ~w~n', [Entities, Move_queue, Available_agents, Waiting_list, Explored_nodes]),
     Entities = [entity(ID, Going)|Other_entities],
+    format('entity checked ~n'),
     get_agent_position(ID, Current_position),
-    (   achieve(ID)
-    ->  leave_maze(ID), ailp_grid_size(N), Max_energy is N*N, my_agent(Agents),
-        (   Agents = []
-        ->  true
-        ;   exit(Agents, p(N, N), Max_energy, [])
-        )
+    format('position checked ~n'),
+    exit(Exit),
+    format('exit checked : ~w~n', [Exit]),
+    (   Current_position = Exit
+    ->  format('exiting !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!~n'),
+        retractall(exit(_)), assert(exit(y)), leave_maze(ID), 
+        format('left ~n'),
+        my_agents(Agents), 
+        format('agents : ~w~n', [Agents]),
+        Temp_entities = [], 
+        format('TM : ~w~n', [Temp_entities]),
+        Updated_State = state([], Move_queue, [], [], []),
+        format('no more next move'),
+        go_out(Agents, [], Updated_State)
     ;   findall(path(New_position, Direction), 
             (agent_adjacent(ID, New_position, empty), 
             direction(Current_position, Direction, New_position),
-            \+ member(agent_move_queue(entity(ID,_),_), Move_queue),
+            \+ member(agent_move_queue(entity(ID, _), _), Move_queue),
             \+ member(path(New_position, _), Explored_nodes),
             \+ opposite_direction(Going, Direction)
             ), New_paths),
@@ -134,7 +157,7 @@ queue_waiting_list(Free_agents, State, Updated_State) :-
     format('State >>> Etities : ~w~n Move_queue : ~w~n Available_agents : ~w~n Waiting_list : ~w~n Explored_nodes : ~w~n', [Entities, Move_queue, Available_agents, Waiting_list, Explored_nodes]),
     Free_agents = [Agent | Agents],
     get_agent_position(Agent, Agent_position),
-    (   search_nearest_agent([[Agent_position]], [], Reversed_path, Waiting_list)  
+    (   search_nearest_node([[Agent_position]], [], Reversed_path, Waiting_list)  
     ->  Reversed_path = [Destination|_],
         reverse(Reversed_path,[_|Path]),
         format('Go Path : ~w~n', [Path]),
@@ -164,7 +187,7 @@ execute_queue(Move_queue, Const, Agent_list, Move_list, Temp_state, Updated_Stat
     ->  execute_queue(Move_queue_left, Const, Agent_list, Move_list, state([entity(ID, Direction)|Temp_entities], [agent_move_queue(entity(ID, Direction), [Next_position|Path])|Temp_move_queue], Temp_agents, Waiting_list, Explored_nodes), Updated_State)
     ;   (   lookup_pos(Next_position, empty)
         ->  (   Path = []
-            ->  (   Direction = exit
+            ->  (   Direction = e
                 ->  format('found!!'), agent_do_moves(ID, [Next_position]), format('bye bye'), leave_maze(ID)
                 ;   execute_queue(Move_queue_left, Const, [ID|Agent_list], [Next_position|Move_list], state([entity(ID, New_direction)|Temp_entities], Temp_move_queue, Temp_agents, Waiting_list, Explored_nodes), Updated_State)
                 )
@@ -186,19 +209,16 @@ execute_queue(Move_queue, Const, Agent_list, Move_list, Temp_state, Updated_Stat
     ).
 
 
-% once an agent found an exit, the maze is solved and other agents go exit stopping exploring
-achieve(Agent) :-
-    get_agent_position(Agent, Position),
-    ailp_grid_size(N),
-    Position = p(N,N).
 
 
-exit([], _, _, []).
-exit([], _, _, Exit_queue) :-
-    execute_queue(Exit_queue, [], [], Updated_exit_queue),
-    exit([], _, _, Updated_exit_queue).
-exit([Agent|Agents], Exit, Max_energy, Exit_queue) :-
+go_out([], [], _).
+go_out([], Exit_queue, State) :-
+    format('executing finishing~n'),
+    execute_queue(Exit_queue, State, [], [], _, _).
+go_out([Agent|Agents], Exit_queue, State) :-
+    go_out(Exit), max_energy(Max_energy),
     get_agent_position(Agent, Agent_position),
     solve_task_as(go(Exit), go(Exit), Max_energy, Max_energy, [state([Agent_position], 0)], [], [], [move_queue(_, Reversed_path)]),
     reverse(Reversed_path, [_| Path]),
-    exit(Agents, Exit, Max_energy, [agent_move_queue(entity(Agent, exit), Path)|Exit_queue]).
+    format('going out path : ~w~n', [Path]),
+    go_out(Agents, [agent_move_queue(entity(Agent, e), Path)|Exit_queue], State).
