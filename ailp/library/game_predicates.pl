@@ -63,7 +63,7 @@ internal_grid_size(X) :-
   ( part_module(0) -> X = 10 % Lab Grid
   ; part_module(1) -> X = 20 % CW part 1
   ; part_module(2) -> random_grid_size(N), X is 15+N % CW part 2
-  ; part_module(3) -> random_grid_size(N), X is 11+2*N % CW part 3
+  ; part_module(3) -> random_grid_size(N), X = 11% CW part 3
   % This must be odd or the maze will fail to generate
   ; part_module(101) -> X = 10 % Lab Search
   ; otherwise      -> X = 20).  
