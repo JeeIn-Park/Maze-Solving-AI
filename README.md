@@ -1,34 +1,33 @@
-# prolog_grid_world
-
 # Maze Solving AI with Efficient Pathfinding
+
+## prolog_grid_world
 
 **Project Duration:** November 2023 – December 2023
 
 ## Overview
 
-This project focuses on developing an AI for solving maze problems on grids using pathfinding algorithms in Prolog. The AI is designed to efficiently navigate agents through various maze scenarios, optimizing both pathfinding speed and memory usage.
+This project focuses on developing an AI for solving maze problems on grids using pathfinding algorithms in Prolog. The AI is designed to efficiently navigate agents through various maze scenarios, optimising both pathfinding speed and memory usage.
 
 ## Features
 
 - **Accelerated Pathfinding:** 
   - Implemented advanced pathfinding algorithms to speed up the process of finding optimal paths for agents in different maze configurations.
-  - Optimized memory usage to handle complex scenarios efficiently.
+  - Optimised memory usage to handle complex scenarios efficiently.
 
-- **Multi-Agent Utilization:**
-  - Enhanced maze-solving capabilities by utilizing multiple agents simultaneously.
+- **Multi-Agent Utilisation:**
+  - Enhanced maze-solving capabilities by utilising multiple agents simultaneously.
   - Effectively addressed edge cases where traditional single-agent approaches might fail.
 
-## Report and Analysis
+## Report
 
-The project includes a comprehensive report detailing the practical applications of the AI, covering the following topics:
+The project includes a detailed report that covers various aspects of the AI and its applications. Below are the different pages of the report:
 
-- **Genetic Algorithms:** Exploration of genetic algorithms as a potential method for evolving and optimizing maze-solving strategies.
-- **Emergence and Norms Conflict:** Analysis of emergent behavior in multi-agent systems and the challenges posed by conflicting norms.
-- **Brooks and Nouvelle AI Principles:** Discussion on how Brooks' principles of behavior-based robotics and Nouvelle AI can be applied to maze-solving AI.
-- **Proposed Improvements:** Suggestions for future enhancements, including advanced heuristic methods and machine learning integration.
+![Report Page 1](./doc/cw_report_2176132/1723976631838-ce38c53b-af48-4d81-a340-6c8d7dc4f751_1.jpg)
 
-## Installation and Usage
+![Report Page 2](./doc/cw_report_2176132/1723976631838-ce38c53b-af48-4d81-a340-6c8d7dc4f751_2.jpg)
 
-1. **Clone the Repository:**
-   ```bash
-   git clone https://github.com/yourusername/maze-solving-ai.git
+![Report Page 3](./doc/cw_report_2176132/1723976631838-ce38c53b-af48-4d81-a340-6c8d7dc4f751_3.jpg)
+
+![Report Page 4](./doc/cw_report_2176132/1723976631838-ce38c53b-af48-4d81-a340-6c8d7dc4f751_4.jpg)
+
+![Report Page 5](./doc/cw_report_2176132/1723976631838-ce38c53b-af48-4d81-a340-6c8d7dc4f751_5.jpg)
