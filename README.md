@@ -235,12 +235,12 @@ The GridWorld library provides an interactive user shell to facilitate user inte
 
 The project includes a detailed report that covers various aspects of the AI and its applications. Below are the different pages of the report:
 
-![Report Page 1](./doc/report/cw_report_2176132/1723976631838-ce38c53b-af48-4d81-a340-6c8d7dc4f751_1.jpg)
+![Report Page 1](./doc/report/1723976631838-ce38c53b-af48-4d81-a340-6c8d7dc4f751_1.jpg)
 
-![Report Page 2](./doc/report/cw_report_2176132/1723976631838-ce38c53b-af48-4d81-a340-6c8d7dc4f751_2.jpg)
+![Report Page 2](./doc/report/1723976631838-ce38c53b-af48-4d81-a340-6c8d7dc4f751_2.jpg)
 
-![Report Page 3](./doc/report/cw_report_2176132/1723976631838-ce38c53b-af48-4d81-a340-6c8d7dc4f751_3.jpg)
+![Report Page 3](./doc/report/1723976631838-ce38c53b-af48-4d81-a340-6c8d7dc4f751_3.jpg)
 
-![Report Page 4](./doc/report/cw_report_2176132/1723976631838-ce38c53b-af48-4d81-a340-6c8d7dc4f751_4.jpg)
+![Report Page 4](./doc/report/1723976631838-ce38c53b-af48-4d81-a340-6c8d7dc4f751_4.jpg)
 
-![Report Page 5](./doc/report/cw_report_2176132/1723976631838-ce38c53b-af48-4d81-a340-6c8d7dc4f751_5.jpg)
+![Report Page 5](./doc/report/1723976631838-ce38c53b-af48-4d81-a340-6c8d7dc4f751_5.jpg)
