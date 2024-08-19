@@ -19,6 +19,11 @@ This project focuses on developing an AI for solving maze problems on grids usin
   - Effectively addressed edge cases where traditional single-agent approaches might fail.
 
 
+- **Requirement:** SWI-Prolog is required to run this program.
+  - Download and install SWI-Prolog by following the instructions on the official website:
+    [SWI-Prolog Installation](https://www.swi-prolog.org/)
+  
+
 ## Installation
 
 ### 1. Download and Extract the Project
@@ -27,36 +32,48 @@ This project focuses on developing an AI for solving maze problems on grids usin
   [Maze-Solving-AI.zip](https://github.com/JeeIn-Park/Maze-Solving-AI/raw/main/Maze-Solving-AI.zip)
 - Extract the contents of the ZIP file to your desired location on your machine.
 
-### 2. Install SWI-Prolog
 
-- Download and install SWI-Prolog by following the instructions on the official website:
-  [SWI-Prolog Installation](https://www.swi-prolog.org/)
+### 2. Running the Project
 
-### 3. Download and Set Up GridWorld Library
-
-- Download the GridWorld library files and skeleton submission files from Blackboard.
-- Unzip these files on your working machine. These files extend and replace the library code from earlier Prolog labs.
-- The setup consists of a file loader `ailp.pl` that allows you to run different parts of the project.
-
-### 4. Running the Project
+To run the project, use the following instructions depending on your operating system. Replace `N` with the part of the program you want to run (e.g., `part1`, `part2`, `part3`).
 
 - **Linux:**
   1. Navigate to the library root folder containing the `ailp.pl` file.
-  2. Run the following command in a bash terminal:
+     ```bash
+     cd /path/to/library/root
+     ```
+  2. Make the `ailp.pl` script executable (if it’s not already):
      ```bash
      chmod +x ailp.pl
-     ./ailp.pl cw partn
      ```
-  
+  3. Run the script with the desired part of the program:
+     ```bash
+     ./ailp.pl cw partN
+     ```
+     Replace `N` with the required part of the program (e.g., `part1`, `part2`, `part3`).
+
 - **Windows:**
-  1. Open the `cmd` or `PowerShell` terminal, or double-click `ailp.pl` in an explorer window.
-  2. Run the following command:
+  1. Open a `cmd` or `PowerShell` terminal, or double-click `ailp.pl` in an Explorer window.
+  2. Run the script using SWI-Prolog:
      ```bash
-     swipl ailp.pl cw partn
+     swipl ailp.pl cw partN
      ```
-  - Alternatively, run:
+     Alternatively, you can use:
      ```bash
-     swipl-win ailp.pl cw partn
+     swipl-win ailp.pl cw partN
+     ```
+     Replace `N` with the required part of the program (e.g., `part1`, `part2`, `part3`).
+
+**Example Commands:**
+- To run Part 1:
+  - Linux: `./ailp.pl cw part1`
+  - Windows: `swipl ailp.pl cw part1` or `swipl-win ailp.pl cw part1`
+- To run Part 2:
+  - Linux: `./ailp.pl cw part2`
+  - Windows: `swipl ailp.pl cw part2` or `swipl-win ailp.pl cw part2`
+- To run Part 3:
+  - Linux: `./ailp.pl cw part3`
+  - Windows: `swipl ailp.pl cw part3` or `swipl-win ailp.pl cw part3`
 
 
 ## Report
