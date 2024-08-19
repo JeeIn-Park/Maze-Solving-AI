@@ -18,19 +18,45 @@ This project focuses on developing an AI for solving maze problems on grids usin
   - Enhanced maze-solving capabilities by utilising multiple agents simultaneously.
   - Effectively addressed edge cases where traditional single-agent approaches might fail.
 
+
 ## Installation
 
-1. Clone the repository:
-   ```bash
+### 1. Download and Extract the Project
 
+- Download the project from the following link:
+  [Maze-Solving-AI.zip](https://github.com/JeeIn-Park/Maze-Solving-AI/raw/main/Maze-Solving-AI.zip)
+- Extract the contents of the ZIP file to your desired location on your machine.
 
-2. Install the required dependencies:
-   ```bash
+### 2. Install SWI-Prolog
 
+- Download and install SWI-Prolog by following the instructions on the official website:
+  [SWI-Prolog Installation](https://www.swi-prolog.org/)
 
-3. Additional setup instructions (if any):
-   ```bash
+### 3. Download and Set Up GridWorld Library
 
+- Download the GridWorld library files and skeleton submission files from Blackboard.
+- Unzip these files on your working machine. These files extend and replace the library code from earlier Prolog labs.
+- The setup consists of a file loader `ailp.pl` that allows you to run different parts of the project.
+
+### 4. Running the Project
+
+- **Linux:**
+  1. Navigate to the library root folder containing the `ailp.pl` file.
+  2. Run the following command in a bash terminal:
+     ```bash
+     chmod +x ailp.pl
+     ./ailp.pl cw partn
+     ```
+  
+- **Windows:**
+  1. Open the `cmd` or `PowerShell` terminal, or double-click `ailp.pl` in an explorer window.
+  2. Run the following command:
+     ```bash
+     swipl ailp.pl cw partn
+     ```
+  - Alternatively, run:
+     ```bash
+     swipl-win ailp.pl cw partn
 
 
 ## Report
