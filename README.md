@@ -40,12 +40,14 @@ To run the project, follow the instructions for your operating system. Replace `
 #### **Linux:**
 
 1. Navigate to the library root folder containing the `ailp.pl` file:
-   <!-- cd /path/to/library/root -->
+   ```bash
+   cd /path/to/library/root
+   ```
 
-2. Make the `ailp.pl` script executable (if it’s not already):
+3. Make the `ailp.pl` script executable (if it’s not already):
    <!-- chmod +x ailp.pl -->
 
-3. Run the script with the desired part of the program:
+4. Run the script with the desired part of the program:
    <!-- ./ailp.pl cw partN -->
    Replace `N` with the required part of the program (e.g., `part1`, `part2`, `part3`).
 
