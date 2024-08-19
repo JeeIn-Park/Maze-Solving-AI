@@ -33,9 +33,11 @@ This project focuses on developing an AI for solving maze problems on grids usin
   [Maze-Solving-AI.zip](https://github.com/JeeIn-Park/Maze-Solving-AI/raw/main/Maze-Solving-AI.zip)
 - Extract the contents of the ZIP file to your desired location on your machine.
 
+
 ### 2. Setting Up the Project
 
 To run the project, follow the instructions for your operating system. Replace `N` with the part of the program you want to run (e.g., `part1`, `part2`, `part3`).
+
 
 #### **Linux:**
 
@@ -56,9 +58,7 @@ To run the project, follow the instructions for your operating system. Replace `
     ./ailp.pl cw partN
    ```
    Replace `N` with the required part of the program (e.g., `part1`, `part2`, `part3`).
-
 **Example Commands:**
-
 - To run Part 1:
   - `./ailp.pl cw part1`
 - To run Part 2:
@@ -74,6 +74,7 @@ To run the project, follow the instructions for your operating system. Replace `
    Please note that you MUST hit "run" in the GridWorld browser window
    
 
+
 #### **Windows:**
 
 1. Open a `cmd` or `PowerShell` terminal, or double-click `ailp.pl` in an Explorer window.
@@ -88,10 +89,7 @@ To run the project, follow the instructions for your operating system. Replace `
     swipl-win ailp.pl cw partN
    ```
    Replace `N` with the required part of the program (e.g., `part1`, `part2`, `part3`).
-
-
 **Example Commands:**
-
 - To run Part 1:
   - `swipl ailp.pl cw part1` or `swipl-win ailp.pl cw part1`
 - To run Part 2:
@@ -107,9 +105,11 @@ To run the project, follow the instructions for your operating system. Replace `
    Please note that you MUST hit "run" in the GridWorld browser window
 
 
+
 ### 3. Running the Project
 
 The GridWorld library provides an interactive user shell to facilitate user interaction. You can invoke the shell with the following command:
+
 
 - **Open the interactive shell:**
   ```bash
@@ -235,12 +235,12 @@ The GridWorld library provides an interactive user shell to facilitate user inte
 
 The project includes a detailed report that covers various aspects of the AI and its applications. Below are the different pages of the report:
 
-![Report Page 1](./doc/cw_report_2176132/1723976631838-ce38c53b-af48-4d81-a340-6c8d7dc4f751_1.jpg)
+![Report Page 1](./doc/report/cw_report_2176132/1723976631838-ce38c53b-af48-4d81-a340-6c8d7dc4f751_1.jpg)
 
-![Report Page 2](./doc/cw_report_2176132/1723976631838-ce38c53b-af48-4d81-a340-6c8d7dc4f751_2.jpg)
+![Report Page 2](./doc/report/cw_report_2176132/1723976631838-ce38c53b-af48-4d81-a340-6c8d7dc4f751_2.jpg)
 
-![Report Page 3](./doc/cw_report_2176132/1723976631838-ce38c53b-af48-4d81-a340-6c8d7dc4f751_3.jpg)
+![Report Page 3](./doc/report/cw_report_2176132/1723976631838-ce38c53b-af48-4d81-a340-6c8d7dc4f751_3.jpg)
 
-![Report Page 4](./doc/cw_report_2176132/1723976631838-ce38c53b-af48-4d81-a340-6c8d7dc4f751_4.jpg)
+![Report Page 4](./doc/report/cw_report_2176132/1723976631838-ce38c53b-af48-4d81-a340-6c8d7dc4f751_4.jpg)
 
-![Report Page 5](./doc/cw_report_2176132/1723976631838-ce38c53b-af48-4d81-a340-6c8d7dc4f751_5.jpg)
+![Report Page 5](./doc/report/cw_report_2176132/1723976631838-ce38c53b-af48-4d81-a340-6c8d7dc4f751_5.jpg)
