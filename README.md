@@ -18,6 +18,21 @@ This project focuses on developing an AI for solving maze problems on grids usin
   - Enhanced maze-solving capabilities by utilising multiple agents simultaneously.
   - Effectively addressed edge cases where traditional single-agent approaches might fail.
 
+## Installation
+
+1. Clone the repository:
+   ```bash
+
+
+2. Install the required dependencies:
+   ```bash
+
+
+3. Additional setup instructions (if any):
+   ```bash
+
+
+
 ## Report
 
 The project includes a detailed report that covers various aspects of the AI and its applications. Below are the different pages of the report:
